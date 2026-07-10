@@ -76,6 +76,30 @@ main.py         FastAPI app
 call `register(...)`. No core changes. That seam is where ToS-compliant data
 access lives.
 
+### Live prices: eBay Browse connector
+
+`connectors/ebay_browse.py` is a real connector against eBay's official Browse
+API. It mints an OAuth2 application token from your credentials (cached until
+expiry), pulls one page of results per configured query, and maps each item
+summary to a `ProductRecord`. It registers itself **only when credentials are
+present** — with none set, ingestion falls back to the mock feed and nothing
+breaks. Per-request network failures are logged and skipped, never crashing
+ingestion.
+
+```bash
+EBAY_CLIENT_ID=…            # from developer.ebay.com (or EBAY_OAUTH_TOKEN=… )
+EBAY_CLIENT_SECRET=…
+EBAY_QUERIES="laptop,4k tv,headphones"   # comma-separated; has a default set
+EBAY_MARKETPLACE=EBAY_US   # default
+EBAY_ENV=production        # or "sandbox"
+EBAY_LIMIT=10              # items per query
+```
+
+Set the credentials, run an ingest tick, and real eBay listings flow through
+the same history → score → alerts pipeline as the mock feed. (The connector is
+fully unit- and integration-tested against the Browse response shape; a live
+call additionally needs outbound network access to `api.ebay.com`.)
+
 ## The Deal Score is a heuristic, on purpose
 
 Every point is traceable to real price history (see `scoring.py`). A deal
@@ -95,9 +119,11 @@ pytest --cov=app        # 20 tests, ~96% coverage
 The original brief describes months of team work. Deliberately out of this
 build, with the honest reason:
 
-- **Live retailer data** — requires official API keys / licensed feeds;
-  scraping most retailers violates their ToS. The mock feed is the stand-in;
-  swap in a real connector.
+- **Live retailer data** — the eBay Browse connector (above) is real; add your
+  API keys to switch from the mock feed to live prices. Other retailers still
+  need their own official-API connectors (Amazon PA-API, Best Buy, Walmart,
+  etc.) — scraping most retailers violates their ToS, which is why every
+  connector wraps a sanctioned API.
 - **Trained price-prediction / quality / assistant models** — the buy/wait
   call here is a transparent rule, not ML. Real models need labeled history.
 - **Community, admin panel, GraphQL, CI/CD** — scaffolding points exist
