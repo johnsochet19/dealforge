@@ -38,14 +38,22 @@ docker compose up --build
 | Method | Path | Purpose |
 |---|---|---|
 | GET  | `/health` | liveness |
+| POST | `/api/v1/auth/register` | create account, returns bearer token |
+| POST | `/api/v1/auth/login` | log in, returns bearer token |
+| GET  | `/api/v1/auth/me` | current account (requires token) |
 | POST | `/api/v1/ingest` | run all connectors, append observations |
 | GET  | `/api/v1/deals?min_score=&category=` | scored deal cards, sorted |
 | GET  | `/api/v1/products/{id}` | single card |
 | GET  | `/api/v1/products/{id}/history` | price series |
 | POST | `/api/v1/alerts` | create alert |
 | GET  | `/api/v1/alerts?user_email=` | list alerts |
-| POST | `/api/v1/alerts/evaluate` | evaluate active alerts, record events |
-| GET  | `/api/v1/alerts/events?user_email=` | fired events |
+| POST | `/api/v1/alerts/evaluate` | evaluate active alerts, record events, deliver |
+| GET  | `/api/v1/alerts/events?user_email=` | fired events (with delivery status) |
+| GET  | `/api/v1/notifications/kinds` | available delivery channel kinds |
+| POST | `/api/v1/notifications/channels` | add a delivery channel (webhook/email) |
+| GET  | `/api/v1/notifications/channels?user_email=` | list a user's channels |
+| DELETE | `/api/v1/notifications/channels/{id}` | remove a channel |
+| POST | `/api/v1/notifications/channels/{id}/test` | send a test notification |
 
 Interactive docs at `/docs`.
 
@@ -58,6 +66,7 @@ services/
   scoring.py    explainable Deal Score (weights documented, returns breakdown)
   ingest.py     runs connectors -> upserts products, appends observations
   alerts.py     rule engine -> AlertEvent records (delivery is separate)
+  notify.py     dispatcher: delivers fired alerts to webhook/email channels
   deals.py      composes history + scoring into API "cards"
 models.py       schema; price_observations is the partition target at scale
 main.py         FastAPI app
@@ -66,6 +75,30 @@ main.py         FastAPI app
 **Adding a retailer:** subclass `RetailerConnector`, wrap an *official* API,
 call `register(...)`. No core changes. That seam is where ToS-compliant data
 access lives.
+
+### Live prices: eBay Browse connector
+
+`connectors/ebay_browse.py` is a real connector against eBay's official Browse
+API. It mints an OAuth2 application token from your credentials (cached until
+expiry), pulls one page of results per configured query, and maps each item
+summary to a `ProductRecord`. It registers itself **only when credentials are
+present** — with none set, ingestion falls back to the mock feed and nothing
+breaks. Per-request network failures are logged and skipped, never crashing
+ingestion.
+
+```bash
+EBAY_CLIENT_ID=…            # from developer.ebay.com (or EBAY_OAUTH_TOKEN=… )
+EBAY_CLIENT_SECRET=…
+EBAY_QUERIES="laptop,4k tv,headphones"   # comma-separated; has a default set
+EBAY_MARKETPLACE=EBAY_US   # default
+EBAY_ENV=production        # or "sandbox"
+EBAY_LIMIT=10              # items per query
+```
+
+Set the credentials, run an ingest tick, and real eBay listings flow through
+the same history → score → alerts pipeline as the mock feed. (The connector is
+fully unit- and integration-tested against the Browse response shape; a live
+call additionally needs outbound network access to `api.ebay.com`.)
 
 ## The Deal Score is a heuristic, on purpose
 
@@ -86,14 +119,56 @@ pytest --cov=app        # 20 tests, ~96% coverage
 The original brief describes months of team work. Deliberately out of this
 build, with the honest reason:
 
-- **Live retailer data** — requires official API keys / licensed feeds;
-  scraping most retailers violates their ToS. The mock feed is the stand-in;
-  swap in a real connector.
+- **Live retailer data** — the eBay Browse connector (above) is real; add your
+  API keys to switch from the mock feed to live prices. Other retailers still
+  need their own official-API connectors (Amazon PA-API, Best Buy, Walmart,
+  etc.) — scraping most retailers violates their ToS, which is why every
+  connector wraps a sanctioned API.
 - **Trained price-prediction / quality / assistant models** — the buy/wait
   call here is a transparent rule, not ML. Real models need labeled history.
-- **Auth, community, admin panel, GraphQL, notification delivery channels,
-  CI/CD** — scaffolding points exist (alerts record events for a dispatcher to
-  consume; connectors/registry are pluggable) but aren't implemented.
+- **Community, admin panel, GraphQL, CI/CD** — scaffolding points exist
+  (connectors/registry are pluggable) but aren't implemented.
+
+## Accounts & auth
+
+Register/login return a **bearer token** (`services/auth.py`: stdlib PBKDF2
+password hashing + an HS256-signed stateless token — no extra dependencies).
+Send it as `Authorization: Bearer <token>`. When a token is present, alert and
+notification-channel operations are **scoped to that account** and a
+`user_email` in the request body/query can't override it (no spoofing);
+channels are ownership-checked.
+
+By default (`REQUIRE_AUTH` unset) the data endpoints still accept an explicit
+`user_email` so the zero-friction demo works without logging in. For a real
+deployment, lock everything down:
+
+```bash
+REQUIRE_AUTH=true SECRET_KEY=$(openssl rand -hex 32)
+```
+
+`SECRET_KEY` signs tokens — set a strong one; the app logs a warning if it's
+unset. Rotating it invalidates outstanding tokens (users just log in again).
+The dashboard has a **👤 sign in** panel that stores the token in the browser
+and drives the notifications panel as the signed-in account.
+
+## Notification delivery
+
+When an alert fires, evaluation records an `AlertEvent` **and** hands it to the
+dispatcher (`services/notify.py`), which delivers to every channel the user
+configured. Two channels ship: **webhook** (POSTs the event JSON) and **email**
+(SMTP). Channels are pluggable — register a new `Channel` subclass and it's
+available with no change to rule logic. Delivery is best-effort: a failing
+channel is recorded on the event (`delivery_status`: `sent` / `partial` /
+`failed` / `no_channels`), never breaking evaluation.
+
+Add a channel via the dashboard's **🔔 notifications** panel or the API, then
+**Test** it. Email needs SMTP configured via env (unset ⇒ email delivery is
+recorded as failed, not silently dropped):
+
+```bash
+SMTP_HOST=smtp.example.com SMTP_PORT=587 SMTP_STARTTLS=true \
+SMTP_USER=apikey SMTP_PASSWORD=… SMTP_FROM=alerts@yourdomain.com
+```
 
 ## Production notes for scale
 

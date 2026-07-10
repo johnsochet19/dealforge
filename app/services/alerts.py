@@ -10,6 +10,7 @@ from datetime import datetime
 from sqlalchemy import select
 from ..models import Alert, AlertEvent, PriceObservation, Product
 from .history import compute_stats
+from .notify import dispatch
 
 
 def _evaluate(rule_type, threshold, latest, stats) -> str | None:
@@ -39,7 +40,11 @@ def _evaluate(rule_type, threshold, latest, stats) -> str | None:
     return None
 
 
-def evaluate_alerts(db) -> list[dict]:
+def evaluate_alerts(db, deliver: bool = True) -> list[dict]:
+    """Evaluate active alerts, record AlertEvents, and (by default) hand each
+    fresh event to the notification dispatcher. Delivery is best-effort: a
+    failing channel is recorded on the event, never raised. Pass deliver=False
+    to record events without attempting delivery."""
     fired = []
     alerts = db.execute(select(Alert).where(Alert.active.is_(True))).scalars().all()
     for alert in alerts:
@@ -54,10 +59,14 @@ def evaluate_alerts(db) -> list[dict]:
         latest = obs[-1]
         msg = _evaluate(alert.rule_type, alert.threshold, latest, stats)
         if msg:
-            db.add(AlertEvent(alert_id=alert.id, message=msg,
-                              triggered_at=datetime.utcnow()))
+            event = AlertEvent(alert_id=alert.id, message=msg,
+                               triggered_at=datetime.utcnow())
+            db.add(event)
             alert.last_triggered_at = datetime.utcnow()
+            status = None
+            if deliver:
+                status = dispatch(db, alert, event, product=alert.product)
             fired.append({"alert_id": alert.id, "product_id": alert.product_id,
-                          "message": msg})
+                          "message": msg, "delivery_status": status})
     db.commit()
     return fired

@@ -17,6 +17,18 @@ from sqlalchemy.orm import relationship
 from .db import Base
 
 
+class User(Base):
+    """A registered account. Alerts and notification channels are linked to a
+    user by email (their natural key), so accounts layer on top of the existing
+    email-keyed data without a schema migration of those tables."""
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    email = Column(String(256), nullable=False, unique=True, index=True)
+    password_hash = Column(String(256), nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class Product(Base):
     __tablename__ = "products"
     id = Column(Integer, primary_key=True)
@@ -81,3 +93,25 @@ class AlertEvent(Base):
                       nullable=False)
     message = Column(Text, nullable=False)
     triggered_at = Column(DateTime, default=datetime.utcnow, index=True)
+    # Delivery is a separate concern (see services/notify.py). We record the
+    # outcome here so the event row is the audit trail: no_channels | sent |
+    # partial | failed. delivery_detail holds a JSON per-channel breakdown.
+    delivery_status = Column(String(16), default="pending")
+    delivery_detail = Column(Text)
+
+
+class NotificationChannel(Base):
+    """Where a user's fired alerts get delivered.
+
+    One row per (user, destination). A webhook target is a URL; an email target
+    is an address. Kept separate from Alert so a user configures delivery once
+    and every alert they own reuses it -- and so channels can be added without
+    touching alert or rule logic.
+    """
+    __tablename__ = "notification_channels"
+    id = Column(Integer, primary_key=True)
+    user_email = Column(String(256), nullable=False, index=True)
+    kind = Column(String(16), nullable=False)   # webhook | email
+    target = Column(String(1024), nullable=False)
+    active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
