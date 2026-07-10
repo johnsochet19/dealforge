@@ -44,8 +44,13 @@ docker compose up --build
 | GET  | `/api/v1/products/{id}/history` | price series |
 | POST | `/api/v1/alerts` | create alert |
 | GET  | `/api/v1/alerts?user_email=` | list alerts |
-| POST | `/api/v1/alerts/evaluate` | evaluate active alerts, record events |
-| GET  | `/api/v1/alerts/events?user_email=` | fired events |
+| POST | `/api/v1/alerts/evaluate` | evaluate active alerts, record events, deliver |
+| GET  | `/api/v1/alerts/events?user_email=` | fired events (with delivery status) |
+| GET  | `/api/v1/notifications/kinds` | available delivery channel kinds |
+| POST | `/api/v1/notifications/channels` | add a delivery channel (webhook/email) |
+| GET  | `/api/v1/notifications/channels?user_email=` | list a user's channels |
+| DELETE | `/api/v1/notifications/channels/{id}` | remove a channel |
+| POST | `/api/v1/notifications/channels/{id}/test` | send a test notification |
 
 Interactive docs at `/docs`.
 
@@ -58,6 +63,7 @@ services/
   scoring.py    explainable Deal Score (weights documented, returns breakdown)
   ingest.py     runs connectors -> upserts products, appends observations
   alerts.py     rule engine -> AlertEvent records (delivery is separate)
+  notify.py     dispatcher: delivers fired alerts to webhook/email channels
   deals.py      composes history + scoring into API "cards"
 models.py       schema; price_observations is the partition target at scale
 main.py         FastAPI app
@@ -91,9 +97,27 @@ build, with the honest reason:
   swap in a real connector.
 - **Trained price-prediction / quality / assistant models** — the buy/wait
   call here is a transparent rule, not ML. Real models need labeled history.
-- **Auth, community, admin panel, GraphQL, notification delivery channels,
-  CI/CD** — scaffolding points exist (alerts record events for a dispatcher to
-  consume; connectors/registry are pluggable) but aren't implemented.
+- **Auth, community, admin panel, GraphQL, CI/CD** — scaffolding points exist
+  (connectors/registry are pluggable) but aren't implemented.
+
+## Notification delivery
+
+When an alert fires, evaluation records an `AlertEvent` **and** hands it to the
+dispatcher (`services/notify.py`), which delivers to every channel the user
+configured. Two channels ship: **webhook** (POSTs the event JSON) and **email**
+(SMTP). Channels are pluggable — register a new `Channel` subclass and it's
+available with no change to rule logic. Delivery is best-effort: a failing
+channel is recorded on the event (`delivery_status`: `sent` / `partial` /
+`failed` / `no_channels`), never breaking evaluation.
+
+Add a channel via the dashboard's **🔔 notifications** panel or the API, then
+**Test** it. Email needs SMTP configured via env (unset ⇒ email delivery is
+recorded as failed, not silently dropped):
+
+```bash
+SMTP_HOST=smtp.example.com SMTP_PORT=587 SMTP_STARTTLS=true \
+SMTP_USER=apikey SMTP_PASSWORD=… SMTP_FROM=alerts@yourdomain.com
+```
 
 ## Production notes for scale
 

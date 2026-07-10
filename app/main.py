@@ -3,6 +3,7 @@
 Real, working endpoints over the core platform: ingestion, deal cards with
 explainable scores, price history, and CRUD + evaluation for alerts.
 """
+import json
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -15,8 +16,9 @@ from . import connectors  # noqa: F401  (register connectors)
 from .services.ingest import run_ingest
 from .services.deals import all_cards, product_card, history_series
 from .services.alerts import evaluate_alerts
+from .services.notify import dispatch, channel_kinds
 from .services.search import search as run_search, facets as get_facets
-from .models import Alert, Product, AlertEvent
+from .models import Alert, Product, AlertEvent, NotificationChannel
 
 Base.metadata.create_all(bind=engine)
 
@@ -99,7 +101,77 @@ def alert_events(user_email: str, db: Session = Depends(get_db)):
         .order_by(AlertEvent.triggered_at.desc())
     ).scalars().all()
     return [{"alert_id": e.alert_id, "message": e.message,
-             "triggered_at": e.triggered_at.isoformat()} for e in rows]
+             "triggered_at": e.triggered_at.isoformat(),
+             "delivery_status": e.delivery_status,
+             "delivery_detail": json.loads(e.delivery_detail) if e.delivery_detail else None}
+            for e in rows]
+
+
+# --- notification channels: where a user's fired alerts get delivered -------
+
+class ChannelIn(BaseModel):
+    user_email: str
+    kind: str
+    target: str
+
+
+def _channel_dict(c: NotificationChannel) -> dict:
+    return {"id": c.id, "user_email": c.user_email, "kind": c.kind,
+            "target": c.target, "active": c.active}
+
+
+@app.get("/api/v1/notifications/kinds")
+def notification_kinds():
+    return {"kinds": channel_kinds()}
+
+
+@app.post("/api/v1/notifications/channels")
+def create_channel(payload: ChannelIn, db: Session = Depends(get_db)):
+    if payload.kind not in channel_kinds():
+        raise HTTPException(400, f"kind must be one of {channel_kinds()}")
+    if not payload.target.strip():
+        raise HTTPException(400, "target is required")
+    c = NotificationChannel(**payload.model_dump())
+    db.add(c); db.commit(); db.refresh(c)
+    return _channel_dict(c)
+
+
+@app.get("/api/v1/notifications/channels")
+def list_channels(user_email: str, db: Session = Depends(get_db)):
+    rows = db.execute(
+        select(NotificationChannel).where(
+            NotificationChannel.user_email == user_email)
+    ).scalars().all()
+    return [_channel_dict(c) for c in rows]
+
+
+@app.delete("/api/v1/notifications/channels/{channel_id}")
+def delete_channel(channel_id: int, db: Session = Depends(get_db)):
+    c = db.get(NotificationChannel, channel_id)
+    if not c:
+        raise HTTPException(404, "channel not found")
+    db.delete(c); db.commit()
+    return {"deleted": channel_id}
+
+
+@app.post("/api/v1/notifications/channels/{channel_id}/test")
+def test_channel(channel_id: int, db: Session = Depends(get_db)):
+    """Send a synthetic notification through one channel so a user can confirm
+    delivery works before relying on it for real alerts."""
+    c = db.get(NotificationChannel, channel_id)
+    if not c:
+        raise HTTPException(404, "channel not found")
+    from .services.notify import get_channel
+    impl = get_channel(c.kind)
+    if impl is None:
+        raise HTTPException(400, f"unknown channel kind {c.kind}")
+    try:
+        impl.send(c.target, subject="DealForge test notification",
+                  body="This is a test notification from DealForge.",
+                  payload={"event": "test", "channel_id": c.id})
+    except Exception as exc:
+        return {"ok": False, "detail": str(exc)}
+    return {"ok": True}
 
 @app.get("/api/v1/search")
 def search(q: str | None = None, category: str | None = None,

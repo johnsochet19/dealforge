@@ -81,3 +81,25 @@ class AlertEvent(Base):
                       nullable=False)
     message = Column(Text, nullable=False)
     triggered_at = Column(DateTime, default=datetime.utcnow, index=True)
+    # Delivery is a separate concern (see services/notify.py). We record the
+    # outcome here so the event row is the audit trail: no_channels | sent |
+    # partial | failed. delivery_detail holds a JSON per-channel breakdown.
+    delivery_status = Column(String(16), default="pending")
+    delivery_detail = Column(Text)
+
+
+class NotificationChannel(Base):
+    """Where a user's fired alerts get delivered.
+
+    One row per (user, destination). A webhook target is a URL; an email target
+    is an address. Kept separate from Alert so a user configures delivery once
+    and every alert they own reuses it -- and so channels can be added without
+    touching alert or rule logic.
+    """
+    __tablename__ = "notification_channels"
+    id = Column(Integer, primary_key=True)
+    user_email = Column(String(256), nullable=False, index=True)
+    kind = Column(String(16), nullable=False)   # webhook | email
+    target = Column(String(1024), nullable=False)
+    active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
