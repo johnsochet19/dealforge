@@ -69,6 +69,15 @@ button.primary{background:var(--accent);color:var(--bg);border-color:var(--accen
 .filters input[type=checkbox]{accent-color:var(--accent)}
 .filters label{font-size:11px;color:var(--muted)}
 #status{font-size:11px;color:var(--muted)}
+.thumb{display:block;position:relative;width:100%;height:132px;border-radius:8px;
+  overflow:hidden;border:1px solid var(--line);text-decoration:none}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb svg{width:100%;height:100%;display:block}
+.thumb .go{position:absolute;right:8px;bottom:8px;
+  background:color-mix(in srgb,var(--panel) 82%,transparent);
+  border:1px solid var(--line);border-radius:5px;padding:3px 8px;font-size:10px;color:var(--ink)}
+a.thumb:hover{border-color:var(--accent)}
+a.thumb:hover .go{border-color:var(--accent);color:var(--accent)}
 .panel-box{background:var(--panel);border:1px solid var(--line);border-radius:10px;
   padding:16px;margin-bottom:16px}
 .panel-box[hidden]{display:none}
@@ -213,6 +222,27 @@ function scoreColor(s){
   if(s>=60) return "var(--warn)";
   return "var(--cold)";
 }
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+const CAT_ICON={Computers:"💻",Electronics:"📺",Phones:"📱",Gaming:"🎮",Home:"🏠"};
+function placeholder(c){
+  const icon=CAT_ICON[c.category]||"🛍️", gid="g"+c.id;
+  return `<svg viewBox="0 0 320 132" preserveAspectRatio="xMidYMid slice" role="img" aria-label="${esc(c.title)}">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="var(--panel-2)"/><stop offset="1" stop-color="var(--panel)"/></linearGradient></defs>
+    <rect width="320" height="132" fill="url(#${gid})"/>
+    <text x="160" y="58" font-size="44" text-anchor="middle" dominant-baseline="central">${icon}</text>
+    <text x="160" y="102" font-size="11" fill="var(--muted)" text-anchor="middle" font-family="monospace" letter-spacing="1">${esc((c.brand||"").toUpperCase())}</text>
+  </svg>`;
+}
+function thumb(c){
+  const inner = c.image_url
+    ? `<img src="${esc(c.image_url)}" alt="${esc(c.title)}" loading="lazy">`
+    : placeholder(c);
+  const go = c.url ? `<span class="go">View on ${esc(c.retailer)} ↗</span>` : "";
+  return c.url
+    ? `<a class="thumb" href="${esc(c.url)}" target="_blank" rel="noopener">${inner}${go}</a>`
+    : `<div class="thumb">${inner}</div>`;
+}
 function sparkline(series){
   if(!series.length) return "";
   const w=280,h=44,pad=3;
@@ -281,6 +311,7 @@ async function render(){
     const s=c.stats;
     const disc = s.avg_90d ? ((s.avg_90d-s.current)/s.avg_90d*100) : 0;
     return `<div class="card">
+      ${thumb(c)}
       <div class="top">
         <div>
           <div class="title">${c.title}</div>
