@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DealForge AI — pricing intelligence desk</title>
+<style>
+:root{
+  --bg:#0b0f14; --panel:#121821; --panel-2:#0e141c; --line:#1f2a37;
+  --ink:#e6edf3; --muted:#7d8da0; --dim:#4a5867;
+  --signal:#37e39b; --warn:#f5b74e; --cold:#5a6b7d; --accent:#37e39b;
+  --hot:#ff6b6b;
+}
+[data-theme="light"]{
+  --bg:#f5f6f4; --panel:#ffffff; --panel-2:#eef0ec; --line:#dce0d8;
+  --ink:#161c22; --muted:#5c6873; --dim:#8b98a4;
+  --signal:#0f9d63; --warn:#c07d10; --cold:#8a97a3; --accent:#0f9d63;
+  --hot:#d94a4a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,monospace;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:24px}
+header{display:flex;align-items:baseline;justify-content:space-between;
+  border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:20px;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:12px}
+.brand h1{font-size:20px;letter-spacing:-.5px;margin:0;font-weight:700}
+.brand h1 .df{color:var(--accent)}
+.brand .tag{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button,select{background:var(--panel);color:var(--ink);border:1px solid var(--line);
+  padding:7px 12px;font-family:inherit;font-size:12px;border-radius:6px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:16px;display:flex;flex-direction:column;gap:10px;transition:border-color .15s}
+.card:hover{border-color:var(--dim)}
+.card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.card .title{font-size:14px;font-weight:600;line-height:1.3}
+.card .meta{font-size:11px;color:var(--muted);margin-top:3px}
+.score{font-size:26px;font-weight:800;line-height:1;text-align:right;min-width:52px}
+.score small{display:block;font-size:9px;color:var(--muted);font-weight:400;letter-spacing:1px;margin-top:3px}
+.price-row{display:flex;align-items:baseline;gap:8px}
+.price{font-size:22px;font-weight:700}
+.msrp{font-size:12px;color:var(--dim);text-decoration:line-through}
+.rec{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:4px;font-weight:700}
+.rec.buy_now{background:color-mix(in srgb,var(--signal) 20%,transparent);color:var(--signal)}
+.rec.wait{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+.rec.consider{background:color-mix(in srgb,var(--cold) 22%,transparent);color:var(--cold)}
+.spark{height:44px;width:100%}
+.bd{display:flex;flex-direction:column;gap:3px;font-size:10px;color:var(--muted)}
+.bd .b{display:flex;align-items:center;gap:6px}
+.bd .b .lbl{width:96px;flex:none}
+.bd .b .bar{height:5px;background:var(--panel-2);border-radius:3px;flex:1;overflow:hidden}
+.bd .b .bar i{display:block;height:100%;background:var(--accent)}
+.stats{display:flex;gap:12px;font-size:10px;color:var(--muted);flex-wrap:wrap;border-top:1px solid var(--line);padding-top:8px}
+.stats b{color:var(--ink);font-weight:600}
+.stock{font-size:10px;padding:2px 6px;border-radius:4px}
+.stock.in{color:var(--signal)} .stock.out{color:var(--hot)}
+.empty{color:var(--muted);text-align:center;padding:60px;grid-column:1/-1}
+.searchbar{margin-bottom:14px}
+.searchbar input{width:100%;background:var(--panel);color:var(--ink);
+  border:1px solid var(--line);border-radius:8px;padding:12px 14px;
+  font-family:inherit;font-size:14px}
+.searchbar input:focus{outline:none;border-color:var(--accent)}
+.filters{display:flex;gap:14px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.filters input[type=checkbox]{accent-color:var(--accent)}
+.filters label{font-size:11px;color:var(--muted)}
+#status{font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <h1><span class="df">Deal</span>Forge<span class="df">·</span>AI</h1>
+      <span class="tag">pricing intelligence desk</span>
+    </div>
+    <div class="controls">
+      <span id="status">—</span>
+      <button id="tick">Run ingest tick</button>
+      <button id="theme">◐ theme</button>
+      <button class="primary" id="refresh">Refresh</button>
+    </div>
+  </header>
+
+  <div class="searchbar">
+    <input id="q" type="search" placeholder="Search products, brands, retailers…" autocomplete="off">
+  </div>
+
+  <div class="filters">
+    <label>category
+      <select id="cat"><option value="">all</option></select>
+    </label>
+    <label>retailer
+      <select id="retailer"><option value="">all</option></select>
+    </label>
+    <label>brand
+      <select id="brand"><option value="">all</option></select>
+    </label>
+    <label>min score
+      <select id="minscore">
+        <option value="0">0</option><option value="50">50</option>
+        <option value="70">70</option><option value="85">85</option>
+      </select>
+    </label>
+    <label>max price
+      <select id="maxprice">
+        <option value="">any</option><option value="200">$200</option>
+        <option value="500">$500</option><option value="1000">$1000</option>
+      </select>
+    </label>
+    <label>in stock only
+      <input type="checkbox" id="instock">
+    </label>
+    <label>sort
+      <select id="sort">
+        <option value="deal_score">deal score</option>
+        <option value="discount">discount vs 90d</option>
+        <option value="price_low">price: low→high</option>
+        <option value="price_high">price: high→low</option>
+        <option value="rating">rating</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="grid" id="grid"><div class="empty">Loading deals…</div></div>
+</div>
+
+<script>
+const API = location.origin.includes("file") ? "http://localhost:8000" : "";
+const $ = s => document.querySelector(s);
+const money = n => n==null ? "—" : "$"+Number(n).toFixed(2);
+
+function scoreColor(s){
+  if(s>=80) return "var(--signal)";
+  if(s>=60) return "var(--warn)";
+  return "var(--cold)";
+}
+function sparkline(series){
+  if(!series.length) return "";
+  const w=280,h=44,pad=3;
+  const ps=series.map(p=>p.price);
+  const min=Math.min(...ps),max=Math.max(...ps),rng=(max-min)||1;
+  const pts=series.map((p,i)=>{
+    const x=pad+(i/(series.length-1||1))*(w-2*pad);
+    const y=h-pad-((p.price-min)/rng)*(h-2*pad);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  const last=ps[ps.length-1];
+  const stroke = last<=min*1.02 ? "var(--signal)" : "var(--muted)";
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <polyline fill="none" stroke="${stroke}" stroke-width="1.5" points="${pts}"/>
+  </svg>`;
+}
+function breakdown(bd){
+  const max={price_position:35,vs_recent_avg:25,discount_rarity:15,at_or_near_low:10,quality:10,coupon:5};
+  const names={price_position:"price position",vs_recent_avg:"vs 90d avg",discount_rarity:"discount rarity",at_or_near_low:"near low",quality:"quality",coupon:"coupon"};
+  return Object.keys(max).map(k=>{
+    const pct=(bd[k]/max[k])*100;
+    return `<div class="b"><span class="lbl">${names[k]}</span>
+      <span class="bar"><i style="width:${pct.toFixed(0)}%"></i></span></div>`;
+  }).join("");
+}
+
+async function loadHistory(id){
+  try{const r=await fetch(`${API}/api/v1/products/${id}/history`);return r.ok?r.json():[];}
+  catch{return [];}
+}
+
+async function loadFacets(){
+  try{
+    const f=await (await fetch(`${API}/api/v1/facets`)).json();
+    fill("#cat", f.categories); fill("#retailer", f.retailers); fill("#brand", f.brands);
+  }catch{}
+}
+function fill(sel, vals){
+  const el=$(sel);
+  if(el.options.length>1) return;      // already populated
+  vals.forEach(v=>{const o=document.createElement("option");o.value=o.textContent=v;el.appendChild(o);});
+}
+
+function buildQuery(){
+  const p=new URLSearchParams();
+  const q=$("#q").value.trim(); if(q) p.set("q",q);
+  const map={cat:"category",retailer:"retailer",brand:"brand",
+             minscore:"min_score",maxprice:"max_price",sort:"sort"};
+  for(const [id,param] of Object.entries(map)){
+    const v=$("#"+id).value; if(v) p.set(param,v);
+  }
+  if($("#instock").checked) p.set("in_stock","true");
+  return p.toString();
+}
+
+async function render(){
+  let data;
+  try{ data=await (await fetch(`${API}/api/v1/search?`+buildQuery())).json(); }
+  catch(e){ $("#grid").innerHTML=`<div class="empty">API unreachable at ${API||location.origin}. Start the server (see README) and refresh.</div>`; return; }
+  const cards=data.results;
+  $("#status").textContent = `${data.total} match · updated ${new Date().toLocaleTimeString()}`;
+  if(!cards.length){$("#grid").innerHTML=`<div class="empty">No products match. Clear the search or loosen filters.</div>`;return;}
+
+  const histories = await Promise.all(cards.map(c=>loadHistory(c.id)));
+  $("#grid").innerHTML = cards.map((c,i)=>{
+    const s=c.stats;
+    const disc = s.avg_90d ? ((s.avg_90d-s.current)/s.avg_90d*100) : 0;
+    return `<div class="card">
+      <div class="top">
+        <div>
+          <div class="title">${c.title}</div>
+          <div class="meta">${c.brand} · ${c.retailer} · ${c.category}</div>
+        </div>
+        <div class="score" style="color:${scoreColor(c.deal_score)}">${c.deal_score}<small>SCORE</small></div>
+      </div>
+      <div class="price-row">
+        <span class="price">${money(c.stats.current)}</span>
+        ${c.msrp?`<span class="msrp">${money(c.msrp)}</span>`:""}
+        ${disc>1?`<span style="font-size:11px;color:var(--signal)">${disc.toFixed(0)}% off</span>`:""}
+        <span style="flex:1"></span>
+        <span class="rec ${c.recommendation}">${c.recommendation.replace("_"," ")}</span>
+      </div>
+      ${sparkline(histories[i])}
+      <div class="bd">${breakdown(c.score_breakdown)}</div>
+      <div class="stats">
+        <span>low <b>${money(s.lowest)}</b></span>
+        <span>90d <b>${money(s.avg_90d)}</b></span>
+        <span>vol <b>${(s.volatility*100).toFixed(1)}%</b></span>
+        <span class="stock ${c.in_stock?'in':'out'}">${c.in_stock?'in stock':'out of stock'}</span>
+        ${c.coupon>0?`<span style="color:var(--warn)">coupon ${money(c.coupon)}</span>`:""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+$("#refresh").onclick=render;
+["#cat","#retailer","#brand","#minscore","#maxprice","#sort"].forEach(s=>$(s).onchange=render);
+$("#instock").onchange=render;
+let _t; $("#q").addEventListener("input",()=>{clearTimeout(_t);_t=setTimeout(render,250);});
+loadFacets();
+$("#tick").onclick=async()=>{
+  $("#tick").textContent="…"; 
+  try{await fetch(`${API}/api/v1/ingest`,{method:"POST"});}catch{}
+  $("#tick").textContent="Run ingest tick"; render();
+};
+$("#theme").onclick=()=>{
+  const h=document.documentElement;
+  h.dataset.theme = h.dataset.theme==="dark"?"light":"dark";
+};
+render();
+</script>
+</body>
+</html>
