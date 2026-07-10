@@ -41,6 +41,9 @@ app = FastAPI(title="DealForge AI", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"],
                    allow_headers=["*"])
 
+from .ratelimit import rate_limit_middleware  # noqa: E402
+app.middleware("http")(rate_limit_middleware)
+
 
 @app.get("/health")
 def health():
@@ -334,6 +337,36 @@ class AssistantIn(BaseModel):
 def assistant(payload: AssistantIn, db: Session = Depends(get_db)):
     from .services.assistant import ask
     return ask(db, payload.question, payload.product_id)
+
+
+@app.get("/api/v1/analytics")
+def analytics_endpoint(db: Session = Depends(get_db)):
+    from .services.analytics import analytics
+    return analytics(db)
+
+
+@app.get("/api/v1/dashboard")
+def dashboard_endpoint(db: Session = Depends(get_db)):
+    from .services.dashboard import dashboard
+    return dashboard(db)
+
+
+@app.get("/api/v1/reports/deals.csv")
+def deals_report(db: Session = Depends(get_db)):
+    from fastapi.responses import Response
+    from .services.reports import deals_csv
+    return Response(deals_csv(db), media_type="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=deals.csv"})
+
+
+@app.get("/api/v1/reports/rankings.csv")
+def rankings_report(dimension: str = "retailers", db: Session = Depends(get_db)):
+    from fastapi.responses import Response
+    from .services.reports import rankings_csv
+    if dimension not in ("retailers", "brands", "categories"):
+        raise HTTPException(400, "dimension must be retailers, brands, or categories")
+    return Response(rankings_csv(db, dimension), media_type="text/csv",
+                    headers={"Content-Disposition": f"attachment; filename={dimension}.csv"})
 
 
 # --- serve the dashboard from the same origin (so it can call the API) ---
