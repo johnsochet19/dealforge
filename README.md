@@ -64,6 +64,12 @@ dedicated migration tool such as Alembic.
 | GET  | `/api/v1/deals?min_score=&category=` | scored deal cards, sorted |
 | GET  | `/api/v1/products/{id}` | single card |
 | GET  | `/api/v1/products/{id}/history` | price series |
+| GET  | `/api/v1/products/{id}/forecast` | explainable price prediction |
+| POST | `/api/v1/assistant` | grounded shopping assistant Q&A |
+| GET  | `/api/v1/dashboard` | curated views (best, discounts, gems, AI picks) |
+| GET  | `/api/v1/analytics` | retailer/brand/category rankings + trends |
+| GET  | `/api/v1/reports/deals.csv` | CSV export of scored deals |
+| GET  | `/api/v1/reports/rankings.csv?dimension=` | CSV export of rankings |
 | POST | `/api/v1/alerts` | create alert |
 | GET  | `/api/v1/alerts?user_email=` | list alerts |
 | POST | `/api/v1/alerts/evaluate` | evaluate active alerts, record events, deliver |
@@ -85,7 +91,12 @@ services/
   scoring.py    explainable Deal Score (weights documented, returns breakdown)
   ingest.py     runs connectors -> upserts products, appends observations
   alerts.py     rule engine -> AlertEvent records (delivery is separate)
-  notify.py     dispatcher: delivers fired alerts to webhook/email channels
+  notify.py     dispatcher: webhook/email/slack/discord/telegram channels
+  predict.py    explainable price forecast (buy/wait, expected price, prob lower)
+  assistant.py  grounded shopping assistant over the catalog
+  analytics.py  retailer/brand/category rankings + trend summaries
+  dashboard.py  curated dashboard views (best/discounts/gems/AI picks)
+  reports.py    CSV exports of deals and rankings
   deals.py      composes history + scoring into API "cards"
 models.py       schema; price_observations is the partition target at scale
 main.py         FastAPI app
@@ -118,6 +129,26 @@ Set the credentials, run an ingest tick, and real eBay listings flow through
 the same history → score → alerts pipeline as the mock feed. (The connector is
 fully unit- and integration-tested against the Browse response shape; a live
 call additionally needs outbound network access to `api.ebay.com`.)
+
+## AI intelligence layer
+
+Two explainable-by-design AI systems, plus insight views — see
+`MILESTONE_REPORT.md` for what's built vs. what still needs keys/infra.
+
+- **Price Prediction** (`predict.py`): fits a trend over the real price series
+  and returns buy/wait, expected price at a horizon, probability of a lower
+  price, expected savings if waiting, and next-likely-sale — each with a
+  plain-language rationale. No training data or ML service; it grows more
+  confident as history accumulates. `GET /products/{id}/forecast`.
+- **Shopping Assistant** (`assistant.py`): answers "is this a good deal?",
+  "best laptop under $900", "cheapest 4k tv", "what's likely to go on sale?"
+  **grounded in the catalog** — every answer cites real products, so it can't
+  invent a listing or price. `POST /assistant`. Works with no LLM key.
+- **Analytics & dashboard** (`analytics.py`, `dashboard.py`): rankings, trend
+  movers, and curated views (today's best, biggest discounts, hidden gems, AI
+  picks). **Notifications**: webhook and email plus Slack, Discord, and Telegram
+  (Slack/Discord webhook URLs; Telegram chat_id + `TELEGRAM_BOT_TOKEN`).
+- **Rate limiting**: set `RATE_LIMIT` (requests/min per IP) to enable.
 
 ## The Deal Score is a heuristic, on purpose
 
