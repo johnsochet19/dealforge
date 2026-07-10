@@ -27,6 +27,7 @@ def product_card(db, product: Product) -> dict:
         "brand": product.brand,
         "category": product.category,
         "url": product.url,
+        "image_url": product.image_url,
         "msrp": product.msrp,
         "rating": product.rating,
         "review_count": product.review_count,

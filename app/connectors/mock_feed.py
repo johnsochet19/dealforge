@@ -7,6 +7,7 @@ end-to-end with no external API keys. Swap this out for a real connector by
 implementing RetailerConnector against an official retailer API.
 """
 import random
+from urllib.parse import quote_plus
 from .base import RetailerConnector, ProductRecord, register
 
 _CATALOG = [
@@ -48,7 +49,11 @@ class MockFeedConnector(RetailerConnector):
             inventory = 0 if not in_stock else self._rng.randint(1, 200)
             yield ProductRecord(
                 external_id=ext_id, title=title, brand=brand, category=category,
-                url=f"https://example.com/{ext_id}", image_url="",
+                # Simulated catalog has no real product page; point "View" at a
+                # real eBay search for the item so the link goes somewhere useful.
+                # Real connectors supply the actual listing URL + photo instead.
+                url=f"https://www.ebay.com/sch/i.html?_nkw={quote_plus(title)}",
+                image_url="",
                 msrp=msrp, rating=rating, review_count=reviews,
                 seller_reputation=round(self._rng.uniform(0.7, 0.99), 2),
                 price=round(cur, 2), in_stock=in_stock, inventory_level=inventory,
