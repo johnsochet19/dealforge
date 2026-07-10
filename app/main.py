@@ -11,9 +11,10 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .db import Base, engine, get_db
+from .db import Base, engine, get_db, init_db
 from . import models  # noqa: F401  (register tables)
 from . import connectors  # noqa: F401  (register connectors)
+from .connectors.base import get_connectors
 from .services.ingest import run_ingest
 from .services.deals import all_cards, product_card, history_series
 from .services.alerts import evaluate_alerts
@@ -34,7 +35,7 @@ if auth.using_default_secret():
         "the environment before deploying; tokens signed with the default are "
         "not secure and reset on every process using the default.")
 
-Base.metadata.create_all(bind=engine)
+init_db()  # create/converge schema (works on SQLite and Postgres)
 
 app = FastAPI(title="DealForge AI", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"],
@@ -124,6 +125,16 @@ def me(user: User = Depends(get_current_user)):
 @app.post("/api/v1/ingest")
 def ingest(db: Session = Depends(get_db)):
     return {"ingested": run_ingest(db)}
+
+
+@app.get("/api/v1/connectors")
+def connectors_status():
+    """Which retailer connectors are live. The mock feed is always present; a
+    real connector (e.g. eBay) appears only when its credentials are configured,
+    so the UI can show whether live data is flowing."""
+    active = sorted(get_connectors().keys())
+    return {"active": active, "ebay_enabled": "ebay" in active,
+            "live_data": any(name != "mockmart" for name in active)}
 
 
 @app.get("/api/v1/deals")

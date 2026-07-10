@@ -172,6 +172,16 @@ def test_ebay_not_registered_by_default():
     assert "mockmart" in get_connectors()
 
 
+def test_connectors_status_endpoint():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    body = TestClient(app).get("/api/v1/connectors").json()
+    assert "mockmart" in body["active"]
+    # no eBay creds in the test env -> not enabled, no live data
+    assert body["ebay_enabled"] is False
+    assert body["live_data"] is False
+
+
 def test_ebay_connector_integrates_with_ingest(monkeypatch):
     """End-to-end through run_ingest: a registered eBay connector's items are
     upserted as products under the 'ebay' retailer with mapped fields."""

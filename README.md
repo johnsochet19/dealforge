@@ -33,6 +33,24 @@ With Docker + Postgres instead of SQLite:
 docker compose up --build
 ```
 
+### Persistent database on Railway
+
+By default the app uses a local SQLite file. On Railway that file lives on the
+container's **ephemeral disk, so it resets on every redeploy** — that's the
+reset-on-redeploy problem. Fix it in two clicks, no code changes:
+
+1. In your Railway project, **add a Postgres plugin** (New → Database → Postgres).
+2. On the app service, add a variable `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
+   (Railway's reference syntax), or copy the plugin's connection string.
+
+That's it. The app normalizes Railway's `postgres://` URL, connects with
+`pool_pre_ping` (survives idle-dropped connections), and `init_db()` creates and
+**converges the schema on every boot** — creating any missing tables and adding
+any missing columns — so deploys never need a manual migration and your deals,
+alerts, channels, and **user accounts persist across redeploys**. (`psycopg2` is
+in requirements.) For team-scale schema management, graduate `init_db` to a
+dedicated migration tool such as Alembic.
+
 ## API (v1)
 
 | Method | Path | Purpose |
@@ -42,6 +60,7 @@ docker compose up --build
 | POST | `/api/v1/auth/login` | log in, returns bearer token |
 | GET  | `/api/v1/auth/me` | current account (requires token) |
 | POST | `/api/v1/ingest` | run all connectors, append observations |
+| GET  | `/api/v1/connectors` | which retailer feeds are live (mock vs eBay) |
 | GET  | `/api/v1/deals?min_score=&category=` | scored deal cards, sorted |
 | GET  | `/api/v1/products/{id}` | single card |
 | GET  | `/api/v1/products/{id}/history` | price series |

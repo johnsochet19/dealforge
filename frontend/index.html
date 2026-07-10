@@ -69,6 +69,9 @@ button.primary{background:var(--accent);color:var(--bg);border-color:var(--accen
 .filters input[type=checkbox]{accent-color:var(--accent)}
 .filters label{font-size:11px;color:var(--muted)}
 #status{font-size:11px;color:var(--muted)}
+.src{font-size:10px;letter-spacing:.5px;padding:3px 8px;border-radius:5px;border:1px solid var(--line);color:var(--muted)}
+.src.live{color:var(--signal);border-color:color-mix(in srgb,var(--signal) 45%,transparent)}
+.src.demo{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
 .thumb{display:block;position:relative;width:100%;height:132px;border-radius:8px;
   overflow:hidden;border:1px solid var(--line);text-decoration:none}
 .thumb img{width:100%;height:100%;object-fit:cover;display:block}
@@ -103,6 +106,7 @@ a.thumb:hover .go{border-color:var(--accent);color:var(--accent)}
       <span class="tag">pricing intelligence desk</span>
     </div>
     <div class="controls">
+      <span id="datasrc" class="src" title="Which retailer feed is live">checking…</span>
       <span id="status">—</span>
       <button id="tick">Run ingest tick</button>
       <button id="bell">🔔 notifications</button>
@@ -289,6 +293,17 @@ async function loadHistory(id){
   catch{return [];}
 }
 
+async function loadDataSource(){
+  const el=$("#datasrc");
+  try{
+    const s=await (await fetch(`${API}/api/v1/connectors`)).json();
+    if(s.ebay_enabled){ el.textContent="eBay live ✓"; el.className="src live"; }
+    else if(s.live_data){ el.textContent="live feed ✓"; el.className="src live"; }
+    else { el.textContent="demo catalog · add eBay keys"; el.className="src demo";
+           el.title="Set EBAY_CLIENT_ID / EBAY_CLIENT_SECRET to show real listings"; }
+  }catch{ el.textContent=""; el.className="src"; }
+}
+
 async function loadFacets(){
   try{
     const f=await (await fetch(`${API}/api/v1/facets`)).json();
@@ -359,10 +374,11 @@ $("#refresh").onclick=render;
 $("#instock").onchange=render;
 let _t; $("#q").addEventListener("input",()=>{clearTimeout(_t);_t=setTimeout(render,250);});
 loadFacets();
+loadDataSource();
 $("#tick").onclick=async()=>{
-  $("#tick").textContent="…"; 
+  $("#tick").textContent="…";
   try{await fetch(`${API}/api/v1/ingest`,{method:"POST"});}catch{}
-  $("#tick").textContent="Run ingest tick"; render();
+  $("#tick").textContent="Run ingest tick"; render(); loadDataSource();
 };
 $("#theme").onclick=()=>{
   const h=document.documentElement;
