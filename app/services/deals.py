@@ -3,6 +3,7 @@ from sqlalchemy import select
 from ..models import Product, PriceObservation
 from .history import compute_stats
 from .scoring import deal_score, recommendation
+from .predict import forecast
 
 
 def product_card(db, product: Product) -> dict:
@@ -19,6 +20,7 @@ def product_card(db, product: Product) -> dict:
         stats, rating=product.rating, review_count=product.review_count,
         seller_reputation=product.seller_reputation, coupon=latest.coupon,
     )
+    fc = forecast(obs, stats)
     return {
         "id": product.id,
         "retailer": product.retailer,
@@ -37,8 +39,31 @@ def product_card(db, product: Product) -> dict:
         "deal_score": score,
         "score_breakdown": breakdown,
         "recommendation": recommendation(stats, score),
+        "prediction": {
+            "recommendation": fc.recommendation,
+            "expected_price": fc.expected_price,
+            "horizon_days": fc.horizon_days,
+            "probability_lower": fc.probability_lower,
+            "expected_savings_if_waiting": fc.expected_savings_if_waiting,
+            "next_sale_in_days": fc.next_sale_in_days,
+            "confidence": fc.confidence,
+        },
         "stats": stats.__dict__,
     }
+
+
+def product_forecast(db, product_id: int) -> dict | None:
+    """Full explainable forecast (with rationale) for one product."""
+    obs = db.execute(
+        select(PriceObservation)
+        .where(PriceObservation.product_id == product_id)
+        .order_by(PriceObservation.observed_at)
+    ).scalars().all()
+    if not obs:
+        return None
+    stats = compute_stats(obs)
+    fc = forecast(obs, stats)
+    return {"product_id": product_id, **fc.__dict__}
 
 
 def all_cards(db) -> list[dict]:

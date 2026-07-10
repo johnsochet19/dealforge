@@ -16,7 +16,7 @@ from . import models  # noqa: F401  (register tables)
 from . import connectors  # noqa: F401  (register connectors)
 from .connectors.base import get_connectors
 from .services.ingest import run_ingest
-from .services.deals import all_cards, product_card, history_series
+from .services.deals import all_cards, product_card, history_series, product_forecast
 from .services.alerts import evaluate_alerts
 from .services.notify import dispatch, channel_kinds
 from .services.search import search as run_search, facets as get_facets
@@ -159,6 +159,16 @@ def history(product_id: int, db: Session = Depends(get_db)):
     if not db.get(Product, product_id):
         raise HTTPException(404, "product not found")
     return history_series(db, product_id)
+
+
+@app.get("/api/v1/products/{product_id}/forecast")
+def forecast_endpoint(product_id: int, db: Session = Depends(get_db)):
+    if not db.get(Product, product_id):
+        raise HTTPException(404, "product not found")
+    fc = product_forecast(db, product_id)
+    if fc is None:
+        raise HTTPException(404, "no price history yet")
+    return fc
 
 
 class AlertIn(BaseModel):
@@ -313,6 +323,17 @@ def search(q: str | None = None, category: str | None = None,
 @app.get("/api/v1/facets")
 def facets(db: Session = Depends(get_db)):
     return get_facets(db)
+
+
+class AssistantIn(BaseModel):
+    question: str
+    product_id: int | None = None
+
+
+@app.post("/api/v1/assistant")
+def assistant(payload: AssistantIn, db: Session = Depends(get_db)):
+    from .services.assistant import ask
+    return ask(db, payload.question, payload.product_id)
 
 
 # --- serve the dashboard from the same origin (so it can call the API) ---
