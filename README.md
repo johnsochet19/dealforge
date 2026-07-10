@@ -38,6 +38,9 @@ docker compose up --build
 | Method | Path | Purpose |
 |---|---|---|
 | GET  | `/health` | liveness |
+| POST | `/api/v1/auth/register` | create account, returns bearer token |
+| POST | `/api/v1/auth/login` | log in, returns bearer token |
+| GET  | `/api/v1/auth/me` | current account (requires token) |
 | POST | `/api/v1/ingest` | run all connectors, append observations |
 | GET  | `/api/v1/deals?min_score=&category=` | scored deal cards, sorted |
 | GET  | `/api/v1/products/{id}` | single card |
@@ -97,8 +100,30 @@ build, with the honest reason:
   swap in a real connector.
 - **Trained price-prediction / quality / assistant models** — the buy/wait
   call here is a transparent rule, not ML. Real models need labeled history.
-- **Auth, community, admin panel, GraphQL, CI/CD** — scaffolding points exist
+- **Community, admin panel, GraphQL, CI/CD** — scaffolding points exist
   (connectors/registry are pluggable) but aren't implemented.
+
+## Accounts & auth
+
+Register/login return a **bearer token** (`services/auth.py`: stdlib PBKDF2
+password hashing + an HS256-signed stateless token — no extra dependencies).
+Send it as `Authorization: Bearer <token>`. When a token is present, alert and
+notification-channel operations are **scoped to that account** and a
+`user_email` in the request body/query can't override it (no spoofing);
+channels are ownership-checked.
+
+By default (`REQUIRE_AUTH` unset) the data endpoints still accept an explicit
+`user_email` so the zero-friction demo works without logging in. For a real
+deployment, lock everything down:
+
+```bash
+REQUIRE_AUTH=true SECRET_KEY=$(openssl rand -hex 32)
+```
+
+`SECRET_KEY` signs tokens — set a strong one; the app logs a warning if it's
+unset. Rotating it invalidates outstanding tokens (users just log in again).
+The dashboard has a **👤 sign in** panel that stores the token in the browser
+and drives the notifications panel as the signed-in account.
 
 ## Notification delivery
 

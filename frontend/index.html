@@ -97,10 +97,25 @@ button.primary{background:var(--accent);color:var(--bg);border-color:var(--accen
       <span id="status">—</span>
       <button id="tick">Run ingest tick</button>
       <button id="bell">🔔 notifications</button>
+      <button id="account">👤 sign in</button>
       <button id="theme">◐ theme</button>
       <button class="primary" id="refresh">Refresh</button>
     </div>
   </header>
+
+  <div class="panel-box" id="auth" hidden>
+    <h2>Account</h2>
+    <div class="hint">Sign in so your alerts and notification channels are tied to
+      your account (the token is stored in this browser). New here? Register with
+      the same form.</div>
+    <div class="panel-row">
+      <input class="grow" id="aEmail" type="email" placeholder="you@email.com" autocomplete="username">
+      <input class="grow" id="aPass" type="password" placeholder="password (min 8 chars)" autocomplete="current-password">
+      <button id="aLogin">Log in</button>
+      <button class="primary" id="aRegister">Register</button>
+    </div>
+    <div class="msg" id="aMsg"></div>
+  </div>
 
   <div class="panel-box" id="notif" hidden>
     <h2>Notification delivery</h2>
@@ -167,6 +182,31 @@ button.primary{background:var(--accent);color:var(--bg);border-color:var(--accen
 const API = location.origin.includes("file") ? "http://localhost:8000" : "";
 const $ = s => document.querySelector(s);
 const money = n => n==null ? "—" : "$"+Number(n).toFixed(2);
+
+// --- auth state ---
+let AUTH = JSON.parse(localStorage.getItem("df_auth") || "null");  // {token,email}
+function authHeaders(extra){
+  const h = Object.assign({}, extra||{});
+  if(AUTH?.token) h["Authorization"] = "Bearer "+AUTH.token;
+  return h;
+}
+function setAuth(a){
+  AUTH = a;
+  if(a) localStorage.setItem("df_auth", JSON.stringify(a));
+  else localStorage.removeItem("df_auth");
+  reflectAuth();
+}
+function reflectAuth(){
+  const btn=$("#account");
+  if(AUTH){ btn.textContent="👤 "+AUTH.email.split("@")[0]; }
+  else { btn.textContent="👤 sign in"; }
+  // notifications panel follows the signed-in account
+  const nEmail=$("#nEmail");
+  if(nEmail){
+    if(AUTH){ nEmail.value=AUTH.email; nEmail.readOnly=true; }
+    else { nEmail.readOnly=false; }
+  }
+}
 
 function scoreColor(s){
   if(s>=80) return "var(--signal)";
@@ -283,13 +323,36 @@ $("#theme").onclick=()=>{
   h.dataset.theme = h.dataset.theme==="dark"?"light":"dark";
 };
 
+// --- account (login / register) ---
+function aMsg(text, ok){const m=$("#aMsg");m.textContent=text||"";m.className="msg"+(ok===true?" ok":ok===false?" err":"");}
+async function doAuth(path){
+  const email=$("#aEmail").value.trim(), password=$("#aPass").value;
+  if(!email||!password){aMsg("Email and password required.",false);return;}
+  try{
+    const r=await fetch(`${API}/api/v1/auth/${path}`,{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email,password})});
+    const body=await r.json();
+    if(r.ok){setAuth({token:body.token,email:body.user.email});
+      aMsg("Signed in as "+body.user.email,true);$("#aPass").value="";
+      setTimeout(()=>{$("#auth").hidden=true;},700);}
+    else{aMsg(body.detail||"Failed.",false);}
+  }catch{aMsg("API unreachable.",false);}
+}
+$("#account").onclick=()=>{
+  if(AUTH){ if(confirm("Log out?")) setAuth(null); return; }
+  const a=$("#auth"); a.hidden=!a.hidden; if(!a.hidden)$("#aEmail").focus();
+};
+$("#aLogin").onclick=()=>doAuth("login");
+$("#aRegister").onclick=()=>doAuth("register");
+
 // --- notification channels ---
 function nMsg(text, ok){const m=$("#nMsg");m.textContent=text||"";m.className="msg"+(ok===true?" ok":ok===false?" err":"");}
 async function nRenderChannels(){
   const email=$("#nEmail").value.trim();
-  if(!email){$("#nList").innerHTML="";return;}
+  if(!email && !AUTH){$("#nList").innerHTML="";return;}
   let rows=[];
-  try{rows=await (await fetch(`${API}/api/v1/notifications/channels?user_email=${encodeURIComponent(email)}`)).json();}
+  try{rows=await (await fetch(`${API}/api/v1/notifications/channels`+(AUTH?"":`?user_email=${encodeURIComponent(email)}`),{headers:authHeaders()})).json();}
   catch{nMsg("API unreachable.",false);return;}
   $("#nList").innerHTML = rows.length ? rows.map(c=>`
     <div class="chan">
@@ -299,30 +362,31 @@ async function nRenderChannels(){
       <button data-del="${c.id}">Delete</button>
     </div>`).join("") : `<div class="msg">No channels yet for this address.</div>`;
   $("#nList").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
-    await fetch(`${API}/api/v1/notifications/channels/${b.dataset.del}`,{method:"DELETE"});
+    await fetch(`${API}/api/v1/notifications/channels/${b.dataset.del}`,{method:"DELETE",headers:authHeaders()});
     nRenderChannels();
   });
   $("#nList").querySelectorAll("[data-test]").forEach(b=>b.onclick=async()=>{
     nMsg("Sending test…");
-    try{const r=await (await fetch(`${API}/api/v1/notifications/channels/${b.dataset.test}/test`,{method:"POST"})).json();
+    try{const r=await (await fetch(`${API}/api/v1/notifications/channels/${b.dataset.test}/test`,{method:"POST",headers:authHeaders()})).json();
       nMsg(r.ok?"Test delivered ✓":`Test failed: ${r.detail}`, r.ok);}
     catch{nMsg("Test request failed.",false);}
   });
 }
-$("#bell").onclick=()=>{const n=$("#notif");n.hidden=!n.hidden;if(!n.hidden)$("#nEmail").focus();};
+$("#bell").onclick=()=>{const n=$("#notif");n.hidden=!n.hidden;if(!n.hidden){reflectAuth();if(AUTH)nRenderChannels();else $("#nEmail").focus();}};
 $("#nLoad").onclick=()=>{nMsg("");nRenderChannels();};
 $("#nAdd").onclick=async()=>{
   const email=$("#nEmail").value.trim(), target=$("#nTarget").value.trim(), kind=$("#nKind").value;
-  if(!email||!target){nMsg("Email and target are required.",false);return;}
+  if((!email && !AUTH)||!target){nMsg("Email and target are required.",false);return;}
   try{
     const r=await fetch(`${API}/api/v1/notifications/channels`,{method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({user_email:email,kind,target})});
+      headers:authHeaders({"Content-Type":"application/json"}),
+      body:JSON.stringify(AUTH?{kind,target}:{user_email:email,kind,target})});
     if(r.ok){$("#nTarget").value="";nMsg("Channel added ✓",true);nRenderChannels();}
     else{const e=await r.json();nMsg(e.detail||"Could not add channel.",false);}
   }catch{nMsg("API unreachable.",false);}
 };
 
+reflectAuth();
 render();
 </script>
 </body>

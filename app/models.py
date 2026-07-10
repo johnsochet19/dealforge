@@ -17,6 +17,18 @@ from sqlalchemy.orm import relationship
 from .db import Base
 
 
+class User(Base):
+    """A registered account. Alerts and notification channels are linked to a
+    user by email (their natural key), so accounts layer on top of the existing
+    email-keyed data without a schema migration of those tables."""
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    email = Column(String(256), nullable=False, unique=True, index=True)
+    password_hash = Column(String(256), nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class Product(Base):
     __tablename__ = "products"
     id = Column(Integer, primary_key=True)
