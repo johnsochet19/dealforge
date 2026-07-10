@@ -102,6 +102,46 @@ class EmailChannel(Channel):
             raise DeliveryError(f"SMTP send failed: {exc}") from exc
 
 
+class SlackChannel(Channel):
+    """Slack Incoming Webhook. target = the webhook URL Slack gives you."""
+    kind = "slack"
+
+    def send(self, target, *, subject, body, payload):
+        try:
+            _http_post(target, {"text": f"*{subject}*\n{body}"})
+        except Exception as exc:
+            raise DeliveryError(f"slack post failed: {exc}") from exc
+
+
+class DiscordChannel(Channel):
+    """Discord Webhook. target = the channel webhook URL."""
+    kind = "discord"
+
+    def send(self, target, *, subject, body, payload):
+        try:
+            _http_post(target, {"content": f"**{subject}**\n{body}"})
+        except Exception as exc:
+            raise DeliveryError(f"discord post failed: {exc}") from exc
+
+
+class TelegramChannel(Channel):
+    """Telegram bot. target = the chat_id; the bot token is a secret kept in the
+    environment (TELEGRAM_BOT_TOKEN) rather than the DB."""
+    kind = "telegram"
+
+    def send(self, target, *, subject, body, payload):
+        token = os.getenv("TELEGRAM_BOT_TOKEN")
+        if not token:
+            raise DeliveryError("telegram channel not configured (set TELEGRAM_BOT_TOKEN)")
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        try:
+            _http_post(url, {"chat_id": target, "text": f"{subject}\n{body}"})
+        except DeliveryError:
+            raise
+        except Exception as exc:
+            raise DeliveryError(f"telegram send failed: {exc}") from exc
+
+
 _CHANNELS: dict[str, Channel] = {}
 
 
@@ -119,6 +159,9 @@ def channel_kinds() -> list[str]:
 
 register_channel(WebhookChannel())
 register_channel(EmailChannel())
+register_channel(SlackChannel())
+register_channel(DiscordChannel())
+register_channel(TelegramChannel())
 
 
 # --- dispatch ---------------------------------------------------------------

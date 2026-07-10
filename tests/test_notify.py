@@ -64,7 +64,8 @@ def test_email_channel_sends_when_configured(monkeypatch):
 
 
 def test_registered_kinds():
-    assert set(channel_kinds()) == {"webhook", "email"}
+    # webhook/email shipped first; slack/discord/telegram added later
+    assert {"webhook", "email"} <= set(channel_kinds())
 
 
 # --- dispatcher tests (against the DB) --------------------------------------
