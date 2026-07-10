@@ -96,6 +96,13 @@ a.thumb:hover .go{border-color:var(--accent);color:var(--accent)}
 .chan button{padding:4px 8px;font-size:11px}
 .msg{font-size:11px;color:var(--muted);min-height:14px}
 .msg.ok{color:var(--signal)} .msg.err{color:var(--hot)}
+.pred{display:flex;gap:8px;align-items:center;font-size:10px;color:var(--muted);
+  border-top:1px solid var(--line);padding-top:7px;flex-wrap:wrap}
+.pred .tag{font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 6px;border-radius:4px}
+.pred .tag.buy_now{background:color-mix(in srgb,var(--signal) 20%,transparent);color:var(--signal)}
+.pred .tag.wait{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+.pred .tag.consider{background:color-mix(in srgb,var(--cold) 22%,transparent);color:var(--cold)}
+#aiAns{font-size:12px;color:var(--ink);min-height:16px;font-weight:600}
 </style>
 </head>
 <body>
@@ -109,12 +116,26 @@ a.thumb:hover .go{border-color:var(--accent);color:var(--accent)}
       <span id="datasrc" class="src" title="Which retailer feed is live">checking…</span>
       <span id="status">—</span>
       <button id="tick">Run ingest tick</button>
+      <button id="ask">🤖 ask AI</button>
       <button id="bell">🔔 notifications</button>
       <button id="account">👤 sign in</button>
       <button id="theme">◐ theme</button>
       <button class="primary" id="refresh">Refresh</button>
     </div>
   </header>
+
+  <div class="panel-box" id="assist" hidden>
+    <h2>Shopping assistant</h2>
+    <div class="hint">Grounded in the live catalog — every answer cites real
+      products. Try “best laptop under $1200”, “cheapest 4k tv”, or “what’s
+      likely to go on sale?”</div>
+    <div class="panel-row">
+      <input class="grow" id="aiQ" placeholder="Ask about deals…" autocomplete="off">
+      <button class="primary" id="aiGo">Ask</button>
+    </div>
+    <div class="msg" id="aiAns"></div>
+    <div class="grid" id="aiPicks" style="margin-top:8px"></div>
+  </div>
 
   <div class="panel-box" id="auth" hidden>
     <h2>Account</h2>
@@ -365,6 +386,12 @@ async function render(){
         <span class="stock ${c.in_stock?'in':'out'}">${c.in_stock?'in stock':'out of stock'}</span>
         ${c.coupon>0?`<span style="color:var(--warn)">coupon ${money(c.coupon)}</span>`:""}
       </div>
+      ${c.prediction?`<div class="pred">
+        <span class="tag ${c.prediction.recommendation}">${c.prediction.recommendation.replace("_"," ")}</span>
+        <span>~${money(c.prediction.expected_price)} in ${c.prediction.horizon_days}d</span>
+        <span>${Math.round(c.prediction.probability_lower*100)}% chance lower</span>
+        ${c.prediction.next_sale_in_days!=null?`<span>next dip ~${c.prediction.next_sale_in_days}d</span>`:""}
+      </div>`:""}
     </div>`;
   }).join("");
 }
@@ -384,6 +411,34 @@ $("#theme").onclick=()=>{
   const h=document.documentElement;
   h.dataset.theme = h.dataset.theme==="dark"?"light":"dark";
 };
+
+// --- shopping assistant ---
+$("#ask").onclick=()=>{const a=$("#assist");a.hidden=!a.hidden;if(!a.hidden)$("#aiQ").focus();};
+async function askAI(){
+  const q=$("#aiQ").value.trim(); if(!q) return;
+  $("#aiAns").textContent="Thinking…"; $("#aiPicks").innerHTML="";
+  try{
+    const r=await (await fetch(`${API}/api/v1/assistant`,{method:"POST",
+      headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q})})).json();
+    $("#aiAns").textContent = r.answer || (r.answer===""?"":"No answer.");
+    const picks = r.picks || (r.answer&&r.answer.product_id?[r.answer]:[]);
+    $("#aiPicks").innerHTML = (picks||[]).map(p=>`
+      <div class="card">
+        <div class="top"><div>
+          <div class="title">${esc(p.title)}</div>
+          <div class="meta">${esc(p.brand||"")} ${p.retailer?"· "+esc(p.retailer):""}</div>
+        </div>
+        ${p.deal_score!=null?`<div class="score" style="color:${scoreColor(p.deal_score)}">${p.deal_score}<small>SCORE</small></div>`:""}
+        </div>
+        <div class="price-row"><span class="price">${money(p.price)}</span>
+          ${p.recommendation?`<span style="flex:1"></span><span class="rec ${p.recommendation}">${p.recommendation.replace("_"," ")}</span>`:""}
+        </div>
+        ${p.url?`<a class="thumb" href="${esc(p.url)}" target="_blank" rel="noopener"><span class="go">View ↗</span>${placeholder(p)}</a>`:""}
+      </div>`).join("");
+  }catch{ $("#aiAns").textContent="Assistant unreachable — start the API and try again."; }
+}
+$("#aiGo").onclick=askAI;
+$("#aiQ")&&$("#aiQ").addEventListener("keydown",e=>{if(e.key==="Enter")askAI();});
 
 // --- account (login / register) ---
 function aMsg(text, ok){const m=$("#aMsg");m.textContent=text||"";m.className="msg"+(ok===true?" ok":ok===false?" err":"");}

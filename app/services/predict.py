@@ -88,12 +88,20 @@ def forecast(observations, stats, horizon_days: int = 30, now=None) -> Forecast:
     t0 = window[0][0]
     xs = [(t - t0).total_seconds() / 86400.0 for t, _ in window]
     ys = [p for _, p in window]
-    slope, intercept = _linreg(xs, ys)
 
-    last_x = xs[-1]
-    projected = intercept + slope * (last_x + horizon_days)
-    # keep the projection inside a believable band around real history
-    expected = round(_clamp(projected, stats.lowest * 0.85, stats.highest * 1.05), 2)
+    # A daily trend is only meaningful if the data actually spans time. When all
+    # observations are clustered within <1 day (e.g. a burst of ticks), there's
+    # no temporal spread to fit a slope to -- report a flat trend honestly rather
+    # than dividing by a near-zero interval and inventing a huge rate.
+    window_span_days = xs[-1] - xs[0]
+    if window_span_days < 1.0:
+        slope, intercept = 0.0, ys[-1]
+        expected = round(current, 2)
+    else:
+        slope, intercept = _linreg(xs, ys)
+        projected = intercept + slope * (xs[-1] + horizon_days)
+        # keep the projection inside a believable band around real history
+        expected = round(_clamp(projected, stats.lowest * 0.85, stats.highest * 1.05), 2)
 
     below_frac = sum(1 for p in prices if p < current) / n
     proj_rel = (slope * horizon_days) / current if current else 0.0  # <0 = falling
@@ -109,11 +117,12 @@ def forecast(observations, stats, horizon_days: int = 30, now=None) -> Forecast:
 
     expected_savings = round(max(0.0, current - expected), 2)
 
-    # next likely sale from dip cadence
+    # next likely sale from dip cadence (needs real time spread to be meaningful)
     dips = _count_dips(pairs)
-    span_days = max(1.0, (pairs[-1][0] - pairs[0][0]).total_seconds() / 86400.0)
+    total_span_days = (pairs[-1][0] - pairs[0][0]).total_seconds() / 86400.0
+    span_days = max(1.0, total_span_days)
     next_sale = None
-    if dips >= 2:
+    if dips >= 2 and total_span_days >= 2.0:
         cadence = span_days / dips
         # days since the most recent below-average observation
         avg = stats.avg_90d or stats.average
@@ -132,7 +141,9 @@ def forecast(observations, stats, horizon_days: int = 30, now=None) -> Forecast:
     rationale = []
     if at_floor:
         rationale.append(f"At/near the historical low (${stats.lowest:.2f}).")
-    if slope < 0:
+    if window_span_days < 1.0:
+        rationale.append("Not enough time spread yet to project a daily trend.")
+    elif slope < 0:
         rationale.append(f"Recent trend is falling (~${abs(slope):.2f}/day).")
     elif slope > 0:
         rationale.append(f"Recent trend is rising (~${slope:.2f}/day).")
