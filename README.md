@@ -1,5 +1,10 @@
 # DealForge AI — core platform
 
+> **Also in this repo:** [BidLevel](bidlevel/README.md) — an AI-powered
+> construction bid leveling & procurement platform (`uvicorn
+> bidlevel.main:app --port 8100`). The two apps are independent and use
+> separate databases.
+
 A working, honestly-scoped foundation for a pricing-intelligence platform:
 connector-based ingestion, real price-history aggregation, an **explainable**
 Deal Score, an alerts engine, and a zero-build dashboard.
