@@ -3,89 +3,98 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BidLevel — AI Bid Leveling Platform</title>
+<title>BidLevel — Workspace</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%235980a6'/%3E%3Ctext x='50' y='68' font-family='sans-serif' font-size='46' font-weight='700' fill='%23f2f2f3' text-anchor='middle'%3EBL%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/assets/theme.css">
 <style>
-  :root{
-    --bg:#0f1420; --panel:#171e2e; --panel2:#1d2537; --line:#2a3550;
-    --text:#e6ebf5; --dim:#8b96ad; --accent:#4f8cff; --ok:#3ecf8e;
-    --warn:#f5b83d; --bad:#f2635d; --chip:#243050;
+  main { max-width: 1360px; margin: 0 auto; padding: 26px clamp(16px, 3vw, 40px) 60px; }
+  .tabs { display: flex; gap: 2px; flex-wrap: wrap; }
+  .tabs button {
+    background: none; border: 1px solid transparent; color: color-mix(in srgb, var(--color-text) 60%, transparent);
+    padding: 6px 12px; cursor: pointer; font-family: var(--font-heading); font-weight: 600;
+    font-size: 13.5px; letter-spacing: 0.05em; text-transform: uppercase;
   }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-  header{display:flex;align-items:center;gap:14px;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
-  header h1{font-size:17px;margin:0}
-  header h1 span{color:var(--accent)}
-  nav{display:flex;gap:4px;flex-wrap:wrap}
-  nav button{background:none;border:none;color:var(--dim);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}
-  nav button.active{background:var(--chip);color:var(--text)}
-  main{padding:18px 20px;max-width:1400px;margin:0 auto}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
-  .card h2{margin:0 0 10px;font-size:15px}
-  .card h3{margin:14px 0 6px;font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
-  .row{display:flex;gap:14px;flex-wrap:wrap}
-  .row>.card{flex:1;min-width:280px}
-  table{border-collapse:collapse;width:100%;font-size:13px}
-  th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
-  th{background:var(--panel2);position:sticky;top:53px}
-  .grid-wrap{overflow-x:auto;max-height:70vh;overflow-y:auto}
-  .money{text-align:right;font-variant-numeric:tabular-nums}
-  .chip{display:inline-block;background:var(--chip);border-radius:20px;padding:1px 9px;font-size:11.5px;margin:1px}
-  .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)} .dim{color:var(--dim)}
-  .cell-included{background:rgba(62,207,142,.12)}
-  .cell-excluded{background:rgba(242,99,93,.15)}
-  .cell-missing{background:rgba(245,184,61,.14)}
-  .sev-critical{color:#ff7b75;font-weight:600}.sev-high{color:var(--bad)}.sev-medium{color:var(--warn)}.sev-low{color:var(--dim)}
-  input,select,textarea{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 9px;font:inherit;width:100%}
-  textarea{min-height:110px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
-  label{display:block;font-size:12px;color:var(--dim);margin:8px 0 3px}
-  .btn{background:var(--accent);border:none;color:#fff;border-radius:8px;padding:8px 14px;cursor:pointer;font:inherit}
-  .btn.ghost{background:var(--chip);color:var(--text)}
-  .btn.small{padding:3px 9px;font-size:12px}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-  .kpi{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-  .kpi b{display:block;font-size:20px;margin-top:2px}
-  .kpi span{color:var(--dim);font-size:12px}
-  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0 14px}
-  details{margin:4px 0}
-  summary{cursor:pointer;color:var(--accent)}
-  .muted{font-size:12px;color:var(--dim)}
-  .flash{position:fixed;bottom:18px;right:18px;background:var(--panel2);border:1px solid var(--line);padding:10px 16px;border-radius:10px;max-width:420px;display:none}
-  .pipeline span{margin-right:10px;font-size:12px}
-  .conf{font-size:11px;color:var(--dim)}
+  .tabs button:hover { color: var(--color-text); }
+  .tabs button.active { color: var(--color-text); border-color: var(--color-divider); background: #fff; }
+
+  .panel { position: relative; border: 1px solid var(--color-divider); background: #fff; margin-bottom: 22px; }
+  .panel .pad { padding: 18px 20px; }
+  .row { display: flex; gap: 22px; flex-wrap: wrap; align-items: stretch; }
+  .row > .panel { flex: 1; min-width: 300px; }
+  .sub-h { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600;
+           color: color-mix(in srgb, var(--color-text) 55%, transparent); margin: 16px 0 6px; }
+  .pagehead { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin: 6px 0 20px; }
+  .pagehead h2 { font-family: var(--font-heading); text-transform: uppercase; font-weight: 600;
+                 font-size: clamp(26px, 3vw, 36px); letter-spacing: 0.02em; margin: 0; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); border: 1px solid var(--color-divider); border-width: 1px 0 0 1px; }
+  .kpi { border: 1px solid var(--color-divider); border-width: 0 1px 1px 0; padding: 12px 16px; background: #fff; }
+  .kpi span { font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 55%, transparent); font-weight: 600; }
+  .kpi b { display: block; font-family: var(--font-heading); font-weight: 600; font-size: 26px; margin-top: 2px; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 16px; }
+  .listrow { border-bottom: 1px solid var(--color-divider-soft); padding: 10px 0; }
+  .listrow:last-child { border-bottom: none; }
+  .cell-click { cursor: pointer; }
+  .lvl-grid th:first-child { position: sticky; left: 0; z-index: 2; background: var(--color-bg); min-width: 180px; }
+  .lvl-grid td:first-child { position: sticky; left: 0; background: #fff; font-weight: 500; }
+  .lvl-grid thead th { position: sticky; top: 0; z-index: 3; }
+  .basebid { font-family: var(--font-heading); font-weight: 600; font-size: 19px; }
+  .flash { position: fixed; bottom: 18px; right: 18px; background: var(--color-accent-900); color: #eef2f6;
+           padding: 12px 18px; max-width: 460px; display: none; font-size: 13.5px; box-shadow: var(--shadow-md); z-index: 50; }
+  .sev { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
+  .sev-critical, .sev-high { color: var(--color-bad); }
+  .sev-medium { color: var(--color-warn); }
+  .sev-low { color: var(--color-neutral-600); }
+  .evidence { font-size: 12px; color: color-mix(in srgb, var(--color-text) 55%, transparent); }
+  .num-badge { font-size: 11px; letter-spacing: 0.14em; color: var(--color-accent-700); font-weight: 600; }
 </style>
 </head>
 <body>
-<header>
-  <h1>Bid<span>Level</span> <span class="muted" style="font-size:11px">AI bid leveling &amp; procurement</span></h1>
-  <nav id="nav"></nav>
-  <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-    <select id="projectSelect" style="width:230px" onchange="state.projectId=+this.value;refreshAll()"></select>
-    <button class="btn ghost" onclick="seedDemo()">Seed demo</button>
-  </div>
-</header>
+
+<nav class="nav">
+  <a class="nav-brand" href="/">BidLevel</a>
+  <span class="nav-chip">Workspace</span>
+  <div class="tabs" id="nav" style="margin-left:8px"></div>
+  <span style="flex:1"></span>
+  <select id="projectSelect" style="width:220px" onchange="state.projectId=+this.value;render()"></select>
+  <button class="btn btn-secondary" onclick="seedDemo()">Seed demo</button>
+</nav>
 <main id="main"></main>
 <div class="flash" id="flash"></div>
 
 <script>
 const API = location.origin + '/api/v1';
 const TABS = ['Dashboard','Project','Documents','Packages','Subs','Invitations','Leveling','Risk','Award','Audit'];
-const state = {tab:'Dashboard', projectId:null, packageId:null};
+const NUM = {Project:'01',Documents:'02',Packages:'03',Subs:'04',Invitations:'05',Leveling:'09',Risk:'10',Award:'11',Dashboard:'12',Audit:'—'};
+const state = {tab: (location.hash||'').slice(1) || 'Dashboard', projectId: null, packageId: null};
+if (!TABS.includes(state.tab)) state.tab = 'Dashboard';
 
-function flash(msg, ms=3500){const el=document.getElementById('flash');el.textContent=msg;el.style.display='block';clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',ms);}
+function flash(msg, ms=4000){const el=document.getElementById('flash');el.textContent=msg;el.style.display='block';clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',ms);}
 async function api(path, opts={}){
   const r = await fetch(API+path,{headers:{'Content-Type':'application/json'},...opts});
-  if(!r.ok){let d='';try{d=JSON.stringify((await r.json()).detail)}catch(e){};flash(`Error ${r.status}: ${d}`);throw new Error(d);}
+  if(!r.ok){let d='';try{d=JSON.stringify((await r.json()).detail)}catch(e){};flash(`Error ${r.status}: ${d}`);throw new Error(d||r.status);}
   return r.json();
 }
 const money = v => v==null?'—':'$'+Number(v).toLocaleString(undefined,{maximumFractionDigits:0});
 const pct = v => v==null?'—':(v*100).toFixed(0)+'%';
 const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const tagFor = s => s==='included'?'tag-accent':s==='excluded'?'tag-outline':s==='missing'?'tag-neutral':'tag-warn';
 
 function renderNav(){
   document.getElementById('nav').innerHTML = TABS.map(t=>
     `<button class="${state.tab===t?'active':''}" onclick="go('${t}')">${t}</button>`).join('');
 }
-function go(tab){state.tab=tab;renderNav();render();}
+function go(tab){state.tab=tab;location.hash=tab;renderNav();render();}
+window.addEventListener('hashchange',()=>{const t=(location.hash||'').slice(1);if(TABS.includes(t)&&t!==state.tab){state.tab=t;renderNav();render();}});
+
+function pagehead(title, extra=''){
+  return `<div class="pagehead"><span class="num-badge">${NUM[state.tab]||''}</span><h2>${title}</h2>${extra}</div>`;
+}
+function blueprint(headCells, inner){
+  return `<div class="blueprint" style="margin-bottom:22px">
+    <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+    ${headCells?`<header class="bp-head">${headCells.map(c=>`<span>${c}</span>`).join('')}</header>`:''}
+    ${inner}</div>`;
+}
 
 async function loadProjects(){
   const ps = await api('/projects');
@@ -96,31 +105,36 @@ async function loadProjects(){
   if(state.projectId) sel.value = state.projectId;
   return ps;
 }
-async function refreshAll(){await render();}
 async function seedDemo(){
   const r = await api('/demo/seed',{method:'POST'});
-  flash(`Demo seeded: project ${r.project_id}, ${r.packages} packages, ${r.subs} subs`);
+  flash(`Demo seeded: project ${r.project_id}, ${r.packages} packages, ${r.subs} subs.`);
   state.projectId = r.project_id; state.packageId = r.electrical_package_id||null;
   await loadProjects(); render();
 }
-
 async function pickPackage(){
   if(!state.projectId) return [];
   const pkgs = await api(`/projects/${state.projectId}/packages`);
-  if(pkgs.length && !pkgs.find(p=>p.id===state.packageId)) state.packageId = pkgs[0].id;
+  if(pkgs.length && !pkgs.find(p=>p.id===state.packageId)){
+    const withBids = pkgs.find(p=>p.proposal_count>0);   // land on live data first
+    state.packageId = (withBids||pkgs[0]).id;
+  }
   return pkgs;
 }
 function pkgSelector(pkgs){
-  return `<label>Bid package</label><select onchange="state.packageId=+this.value;render()" style="max-width:360px">
-    ${pkgs.map(p=>`<option value="${p.id}" ${p.id===state.packageId?'selected':''}>${esc(p.trade)} — div ${esc(p.csi_division)} (${esc(p.status)})</option>`).join('')}
-  </select>`;
+  return `<div style="display:flex;gap:14px;align-items:end;flex-wrap:wrap">
+    <div style="min-width:280px"><label>Bid package</label>
+    <select onchange="state.packageId=+this.value;render()">
+    ${pkgs.map(p=>`<option value="${p.id}" ${p.id===state.packageId?'selected':''}>${esc(p.trade)} — Div ${esc(p.csi_division)} (${esc(p.status)})</option>`).join('')}
+    </select></div></div>`;
 }
+const empty = msg => `<div class="panel"><div class="pad muted">${msg}</div></div>`;
 
-/* ---------------- Dashboard ---------------- */
+/* ---------------- 12 · Dashboard ---------------- */
 async function vDashboard(){
   const d = await api('/analytics'+(state.projectId?`?project_id=${state.projectId}`:''));
   const k=(l,v)=>`<div class="kpi"><span>${l}</span><b>${v}</b></div>`;
-  return `<div class="card"><h2>Executive dashboard</h2>
+  const chips = (obj,cls='tag-neutral',fmt=x=>x) => Object.entries(obj).map(([a,b])=>`<span class="tag ${cls}" style="margin:2px 6px 2px 0">${esc(a)}: ${fmt(b)}</span>`).join('')||'<span class="muted">none</span>';
+  return pagehead('Analytics — executive dashboard') + `
     <div class="kpis">
       ${k('Projects',d.projects)}${k('Bid packages',d.packages)}
       ${k('Invitations',d.invitations)}${k('Participation',pct(d.participation_rate))}
@@ -128,102 +142,112 @@ async function vDashboard(){
       ${k('Leveling savings',money(d.total_leveling_savings))}
       ${k('Awarded total',money(d.awarded_total))}
       ${k('Open risk exposure',money(d.open_risk_cost_exposure))}
-      ${k('AI extraction confidence',d.avg_extraction_confidence??'—')}
     </div>
-    <h3>Packages by status</h3>${Object.entries(d.packages_by_status).map(([s,n])=>`<span class="chip">${s}: ${n}</span>`).join('')||'<span class="dim">none</span>'}
-    <h3>Savings by trade</h3>${Object.entries(d.savings_by_trade).map(([t,v])=>`<span class="chip">${t}: ${money(v)}</span>`).join('')||'<span class="dim">need ≥2 bids on a package</span>'}
-    <h3>Risk by severity</h3>${Object.entries(d.risk_by_severity).map(([s,n])=>`<span class="chip sev-${s}">${s}: ${n}</span>`).join('')||'<span class="dim">none</span>'}
-    <h3>Diversity participation</h3>${Object.entries(d.diversity_participation).map(([c,n])=>`<span class="chip">${c}: ${n}</span>`).join('')||'<span class="dim">none</span>'}
-    <h3>Vendors</h3>
-    <table><tr><th>Vendor</th><th>Invited</th><th>Submitted</th><th>Response rate</th><th>Awarded</th></tr>
-    ${d.vendors.map(v=>`<tr><td>${esc(v.name)}</td><td>${v.invited}</td><td>${v.submitted}</td><td>${pct(v.response_rate)}</td><td>${v.awarded}</td></tr>`).join('')}
-    </table></div>`;
+    <div class="row" style="margin-top:22px">
+      <div class="panel"><div class="pad">
+        <div class="sub-h" style="margin-top:0">Packages by status</div>${chips(d.packages_by_status,'tag-accent')}
+        <div class="sub-h">Savings by trade</div>${chips(d.savings_by_trade,'tag-ok',money)}
+        <div class="sub-h">Risk by severity</div>${chips(d.risk_by_severity,'tag-warn')}
+        <div class="sub-h">Diversity participation</div>${chips(d.diversity_participation,'tag-accent')}
+        <div class="sub-h">AI extraction confidence</div><span class="tag tag-neutral">${d.avg_extraction_confidence??'—'}</span>
+      </div></div>
+      <div class="panel"><div class="pad">
+        <div class="sub-h" style="margin-top:0">Vendors</div>
+        <div class="grid-wrap"><table class="table">
+        <tr><th>Vendor</th><th>Invited</th><th>Submitted</th><th>Response</th><th>Awarded</th></tr>
+        ${d.vendors.map(v=>`<tr><td>${esc(v.name)}</td><td>${v.invited}</td><td>${v.submitted}</td><td>${pct(v.response_rate)}</td><td>${v.awarded}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">no invitations yet</td></tr>'}
+        </table></div>
+      </div></div>
+    </div>`;
 }
 
-/* ---------------- Project wizard ---------------- */
+/* ---------------- 01 · Project ---------------- */
 const FIELDS = [
-  ['name','Project Name*'],['number','Project Number*'],['client','Client'],['owner','Owner'],
-  ['architect','Architect'],['engineer','Engineer'],['general_contractor','General Contractor'],
-  ['estimator','Estimator'],['project_manager','Project Manager'],['superintendent','Superintendent'],
-  ['address','Address'],['time_zone','Time Zone'],['estimated_value','Estimated Value ($)'],
-  ['bid_due_date','Bid Due Date* (YYYY-MM-DD)'],['construction_start','Construction Start'],
-  ['completion_date','Completion Date'],['project_type','Project Type'],['delivery_method','Delivery Method'],
-  ['union_status','Union / Non-Union'],['tax_jurisdiction','Tax Jurisdiction'],
-  ['insurance_requirements','Insurance Requirements'],['bonding_requirements','Bonding Requirements'],
+  ['name','Project name*'],['number','Project number*'],['client','Client'],['owner','Owner'],
+  ['architect','Architect'],['engineer','Engineer'],['general_contractor','General contractor'],
+  ['estimator','Estimator'],['project_manager','Project manager'],['superintendent','Superintendent'],
+  ['address','Address'],['time_zone','Time zone'],['estimated_value','Estimated value ($)'],
+  ['bid_due_date','Bid due date* (YYYY-MM-DD)'],['construction_start','Construction start'],
+  ['completion_date','Completion date'],['project_type','Project type'],['delivery_method','Delivery method'],
+  ['union_status','Union / non-union'],['tax_jurisdiction','Tax jurisdiction'],
+  ['insurance_requirements','Insurance requirements'],['bonding_requirements','Bonding requirements'],
 ];
 async function vProject(){
   let current='';
   if(state.projectId){
     const p = await api(`/projects/${state.projectId}`);
-    current = `<div class="card"><h2>${esc(p.name)} <span class="muted">#${esc(p.number)}</span></h2>
-      <div class="row">
-      <div class="card"><h3>Team</h3>
-        ${['client','owner','architect','engineer','general_contractor','estimator','project_manager'].map(f=>`<div><span class="dim">${f.replace(/_/g,' ')}:</span> ${esc(p[f])||'—'}</div>`).join('')}</div>
-      <div class="card"><h3>Key facts</h3>
-        <div><span class="dim">value:</span> ${money(p.estimated_value)}</div>
-        <div><span class="dim">bid due:</span> ${esc(p.bid_due_date)}</div>
-        <div><span class="dim">start → completion:</span> ${esc(p.construction_start)} → ${esc(p.completion_date)}</div>
-        <div><span class="dim">delivery:</span> ${esc(p.delivery_method)||'—'} · ${esc(p.union_status)||'—'}</div>
-        <div><span class="dim">insurance:</span> ${esc(p.insurance_requirements)||'—'}</div>
-        <div><span class="dim">bonding:</span> ${esc(p.bonding_requirements)||'—'}</div></div>
-      </div></div>`;
+    current = blueprint([esc(p.name), '#'+esc(p.number), esc(p.status)], `<div class="pad"><div class="row">
+      <div style="flex:1;min-width:260px"><div class="sub-h" style="margin-top:0">Team</div>
+        ${['client','owner','architect','engineer','general_contractor','estimator','project_manager'].map(f=>`<div><span class="muted">${f.replace(/_/g,' ')}:</span> ${esc(p[f])||'—'}</div>`).join('')}</div>
+      <div style="flex:1;min-width:260px"><div class="sub-h" style="margin-top:0">Key facts</div>
+        <div><span class="muted">value:</span> ${money(p.estimated_value)}</div>
+        <div><span class="muted">bid due:</span> ${esc(p.bid_due_date)}</div>
+        <div><span class="muted">start → completion:</span> ${esc(p.construction_start)} → ${esc(p.completion_date)}</div>
+        <div><span class="muted">delivery:</span> ${esc(p.delivery_method)||'—'} · ${esc(p.union_status)||'—'}</div>
+        <div><span class="muted">insurance:</span> ${esc(p.insurance_requirements)||'—'}</div>
+        <div><span class="muted">bonding:</span> ${esc(p.bonding_requirements)||'—'}</div></div>
+    </div></div>`);
   }
-  return current + `<div class="card"><h2>Create project</h2>
+  return pagehead('Project wizard') + current + `<div class="panel"><div class="pad">
+    <div class="sub-h" style="margin-top:0">Create project — required fields validated server-side</div>
     <div class="form-grid">${FIELDS.map(([f,l])=>`<div><label>${l}</label><input id="pf_${f}"></div>`).join('')}</div>
-    <p><button class="btn" onclick="createProject()">Create project</button>
-    <span class="muted">Required fields are validated server-side before the project is created.</span></p></div>`;
+    <p><button class="btn btn-primary" onclick="createProject()">Create project</button></p></div></div>`;
 }
 async function createProject(){
   const payload = {};
   FIELDS.forEach(([f])=>{const v=document.getElementById('pf_'+f).value.trim();if(v)payload[f]=f==='estimated_value'?+v:v;});
   const p = await api('/projects',{method:'POST',body:JSON.stringify(payload)});
-  flash('Project created — now upload documents; AI processing starts automatically.');
+  flash('Project created — upload documents next; AI processing starts automatically.');
   state.projectId=p.id; await loadProjects(); go('Documents');
 }
 
-/* ---------------- Documents & AI ---------------- */
+/* ---------------- 02 · Documents ---------------- */
 async function vDocuments(){
-  if(!state.projectId) return '<div class="card">Create or select a project first.</div>';
+  if(!state.projectId) return pagehead('Drawing intelligence') + empty('Create or select a project first.');
   const [docs,sheets,qtys,scope,trades] = await Promise.all([
     api(`/projects/${state.projectId}/documents`), api(`/projects/${state.projectId}/sheets`),
     api(`/projects/${state.projectId}/quantities`), api(`/projects/${state.projectId}/scope-items`),
     api(`/projects/${state.projectId}/trades`)]);
-  const stageIcon = s => s==='complete'?'✅':s==='skipped'?'⚠️':'⏳';
-  return `<div class="card"><h2>Upload document</h2>
-    <div class="form-grid">
-      <div><label>Filename</label><input id="doc_name" placeholder="A-Set_Drawings.pdf"></div>
-      <div><label>Type</label><select id="doc_type">${['drawings','specifications','scope','bid_instructions','estimate','contract','geotech','survey','bim','addendum','rfi'].map(t=>`<option>${t}</option>`).join('')}</select></div>
-    </div>
-    <label>Extractable text content (OCR seam — paste sheet lists, notes, schedules, spec sections)</label>
-    <textarea id="doc_text"></textarea>
-    <p><button class="btn" onclick="uploadDoc()">Upload — AI processing starts immediately</button></p></div>
-
-  <div class="card"><h2>Documents (${docs.length})</h2>
-    ${docs.map(d=>`<div style="border-bottom:1px solid var(--line);padding:7px 0">
-      <b>${esc(d.filename)}</b> <span class="chip">${esc(d.doc_type)}</span>
-      <span class="chip">${esc(d.file_format)}</span>
-      <span class="conf">confidence ${d.confidence}</span>
-      <div class="pipeline">${Object.entries(d.pipeline).map(([k,v])=>`<span>${stageIcon(v.status)} ${k.replace(/_/g,' ')} <span class="dim">— ${esc(v.detail)}</span></span>`).join('')}</div>
-    </div>`).join('')||'<span class="dim">none yet</span>'}</div>
-
+  const stageTag = s => s==='complete'?'tag-ok':s==='skipped'?'tag-warn':'tag-neutral';
+  return pagehead('Drawing intelligence') + `
   <div class="row">
-    <div class="card"><h2>Detected trades → suggested packages</h2>
-      ${trades.map(t=>`<div><span class="chip">div ${t.csi_division}</span> <b>${esc(t.trade)}</b> <span class="dim">(${t.evidence.slice(0,3).map(esc).join(', ')})</span></div>`).join('')||'<span class="dim">none yet</span>'}
-      <p><button class="btn" onclick="buildPkgs()">Build bid packages from detected trades</button></p></div>
-    <div class="card"><h2>Drawing sheets (${sheets.length})</h2><div class="grid-wrap">
-      <table><tr><th>No.</th><th>Title</th><th>Discipline</th><th>Rev</th><th>Scale</th><th>Floor</th><th>Notes</th><th>Conf</th></tr>
-      ${sheets.map(s=>`<tr><td>${esc(s.number)}</td><td>${esc(s.title)}</td><td>${esc(s.discipline)}</td><td>${esc(s.revision)} ${esc(s.revision_date)}</td><td>${esc(s.scale)}</td><td>${esc(s.floor)}</td><td>${s.notes.map(n=>`<span class="chip">${esc(n.kind)}</span>`).join('')}</td><td class="conf">${s.confidence}</td></tr>`).join('')}
-      </table></div></div>
+    <div class="panel" style="flex:1.2"><div class="pad">
+      <div class="sub-h" style="margin-top:0">Upload document — AI pipeline starts immediately</div>
+      <div class="form-grid">
+        <div><label>Filename</label><input id="doc_name" placeholder="A-Set_Drawings.pdf"></div>
+        <div><label>Type</label><select id="doc_type">${['drawings','specifications','scope','bid_instructions','estimate','contract','geotech','survey','bim','addendum','rfi'].map(t=>`<option>${t}</option>`).join('')}</select></div>
+      </div>
+      <label>Extractable text content (the OCR seam — paste sheet lists, notes, schedules, spec sections)</label>
+      <textarea id="doc_text"></textarea>
+      <p><button class="btn btn-primary" onclick="uploadDoc()">Upload</button></p>
+    </div></div>
+    <div class="panel"><div class="pad">
+      <div class="sub-h" style="margin-top:0">Detected trades → suggested packages</div>
+      ${trades.map(t=>`<div class="listrow"><span class="tag tag-accent">Div ${t.csi_division}</span> <b>${esc(t.trade)}</b> <span class="evidence">(${t.evidence.slice(0,3).map(esc).join(', ')})</span></div>`).join('')||'<div class="muted">none yet</div>'}
+      ${trades.length?`<p><button class="btn btn-primary" onclick="buildPkgs()">Build bid packages</button></p>`:''}
+    </div></div>
+  </div>
+  ${blueprint(['Documents','pipeline status',`${docs.length} files`],
+    docs.map(d=>`<div class="pad" style="border-bottom:1px solid var(--color-divider-soft)">
+      <b>${esc(d.filename)}</b> <span class="tag tag-neutral">${esc(d.doc_type)}</span>
+      <span class="tag tag-neutral">${esc(d.file_format)}</span> <span class="conf">confidence ${d.confidence}</span>
+      <div style="margin-top:6px">${Object.entries(d.pipeline).map(([k,v])=>`<span class="tag ${stageTag(v.status)}" style="margin:2px 6px 2px 0" title="${esc(v.detail)}">${k.replace(/_/g,' ')}</span>`).join('')}</div>
+    </div>`).join('')||'<div class="pad muted">none yet</div>')}
+  <div class="row">
+    ${blueprint(['Drawing sheets',`${sheets.length}`],`<div class="grid-wrap">
+      <table class="table"><tr><th>No.</th><th>Title</th><th>Discipline</th><th>Rev</th><th>Scale</th><th>Floor</th><th>Notes</th><th>Conf</th></tr>
+      ${sheets.map(s=>`<tr><td>${esc(s.number)}</td><td>${esc(s.title)}</td><td>${esc(s.discipline)}</td><td>${esc(s.revision)} ${esc(s.revision_date)}</td><td>${esc(s.scale)}</td><td>${esc(s.floor)}</td><td>${s.notes.map(n=>`<span class="tag tag-neutral">${esc(n.kind.replace(/_/g,' '))}</span>`).join(' ')}</td><td class="conf">${s.confidence}</td></tr>`).join('')||'<tr><td colspan="8" class="muted">none</td></tr>'}
+      </table></div>`)}
   </div>
   <div class="row">
-    <div class="card"><h2>Detected quantities (${qtys.length})</h2><div class="grid-wrap">
-      <table><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Trade</th><th>CSI</th><th>Sheet</th><th>Conf</th></tr>
-      ${qtys.map(q=>`<tr><td title="${esc(q.source_detail)}">${esc(q.description.slice(0,70))}</td><td class="money">${q.value.toLocaleString()}</td><td>${esc(q.unit)}</td><td>${esc(q.trade)}</td><td>${esc(q.csi_code)}</td><td>${esc(q.source_sheet)}</td><td class="conf">${q.confidence}</td></tr>`).join('')}
-      </table></div></div>
-    <div class="card"><h2>Structured scope (${scope.length})</h2><div class="grid-wrap">
-      <table><tr><th>Text</th><th>Trade</th><th>Install</th><th>Material</th><th>Furnished by</th><th>Excluded</th></tr>
-      ${scope.map(s=>`<tr><td>${esc(s.original_text.slice(0,80))}</td><td>${esc(s.trade)}</td><td>${s.installation_included?'✓':'—'}</td><td>${s.material_included?'✓':'—'}</td><td>${esc(s.furnished_by)}</td><td>${s.excluded?'<span class="bad">yes</span>':'no'}</td></tr>`).join('')}
-      </table></div></div>
+    ${blueprint(['Detected quantities',`${qtys.length}`],`<div class="grid-wrap">
+      <table class="table"><tr><th>Description</th><th>Qty</th><th>Unit</th><th>Trade</th><th>CSI</th><th>Sheet</th><th>Conf</th></tr>
+      ${qtys.map(q=>`<tr><td title="${esc(q.source_detail)}">${esc(q.description.slice(0,70))}</td><td class="money">${q.value.toLocaleString()}</td><td>${esc(q.unit)}</td><td>${esc(q.trade)}</td><td>${esc(q.csi_code)}</td><td>${esc(q.source_sheet)}</td><td class="conf">${q.confidence}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">none</td></tr>'}
+      </table></div>`)}
+    ${blueprint(['Structured scope',`${scope.length}`],`<div class="grid-wrap">
+      <table class="table"><tr><th>Text</th><th>Trade</th><th>Install</th><th>Material</th><th>Furnished by</th><th>Excluded</th></tr>
+      ${scope.map(s=>`<tr><td>${esc(s.original_text.slice(0,80))}</td><td>${esc(s.trade)}</td><td>${s.installation_included?'✓':'—'}</td><td>${s.material_included?'✓':'—'}</td><td>${esc(s.furnished_by)}</td><td>${s.excluded?'<span class="tag tag-outline">Excluded</span>':'no'}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">none</td></tr>'}
+      </table></div>`)}
   </div>`;
 }
 async function uploadDoc(){
@@ -237,33 +261,39 @@ async function buildPkgs(){
   flash(`${r.length} package(s) created.`); go('Packages');
 }
 
-/* ---------------- Packages ---------------- */
+/* ---------------- 03 · Packages ---------------- */
 async function vPackages(){
-  if(!state.projectId) return '<div class="card">Select a project first.</div>';
+  if(!state.projectId) return pagehead('Package builder') + empty('Select a project first.');
   const pkgs = await pickPackage();
-  if(!pkgs.length) return '<div class="card">No packages — build them from the Documents tab.</div>';
+  if(!pkgs.length) return pagehead('Package builder') + empty('No packages — build them from the Documents tab.');
   const pkg = await api(`/packages/${state.packageId}`);
   const c = pkg.content||{};
-  const list = (arr,f=x=>esc(typeof x==='string'?x:JSON.stringify(x))) => (arr||[]).map(x=>`<li>${f(x)}</li>`).join('')||'<li class="dim">none</li>';
-  return `<div class="card">${pkgSelector(pkgs)}</div>
-  <div class="card"><h2>${esc(pkg.name)} <span class="chip">v${pkg.version}</span> <span class="chip">${esc(pkg.status)}</span> ${pkg.ai_generated?'<span class="chip">AI-generated</span>':''}</h2>
-    <div class="row">
-      <div class="card"><h3>Scope</h3><p>${esc(c.scope)}</p>
+  const list = (arr,f=x=>esc(typeof x==='string'?x:JSON.stringify(x))) => (arr||[]).map(x=>`<div class="listrow">${f(x)}</div>`).join('')||'<div class="muted">none</div>';
+  return pagehead('Package builder', pkgSelector(pkgs)) +
+  blueprint([esc(pkg.name), 'v'+pkg.version, esc(pkg.status), pkg.ai_generated?'AI-generated':'manual'], `
+    <div class="row" style="gap:0">
+      <div style="flex:1;min-width:280px;padding:18px 20px;border-right:1px solid var(--color-divider-soft)">
+        <div class="sub-h" style="margin-top:0">Scope</div><p class="soft">${esc(c.scope)}</p>
         <label>Edit scope (versioned + audited)</label><textarea id="pkg_scope">${esc(c.scope||'')}</textarea>
         <label>Reason for change</label><input id="pkg_reason" placeholder="optional">
-        <p><button class="btn" onclick="savePkg()">Save (creates v${pkg.version+1})</button></p></div>
-      <div class="card"><h3>Included</h3><ul>${list(c.included)}</ul>
-        <h3>Excluded</h3><ul>${list(c.excluded)}</ul>
-        <h3>Unit price requests</h3><ul>${list(c.unit_price_requests,u=>`${esc(u.description)} <span class="chip">${esc(u.unit)}</span>`)}</ul></div>
-      <div class="card"><h3>Quantities in package</h3><ul>${list(c.quantities,q=>`${q.value.toLocaleString()} ${esc(q.unit)} — ${esc(q.description.slice(0,60))} <span class="conf">${q.confidence} · ${esc(q.source_sheet)}</span>`)}</ul>
-        <h3>Requirements</h3>
+        <p><button class="btn btn-primary" onclick="savePkg()">Save — creates v${pkg.version+1}</button></p>
+        <details><summary>Version history (${(pkg.versions||[]).length})</summary>
+          ${(pkg.versions||[]).map(v=>`<div class="muted">v${v.version} ${v.user?'by '+esc(v.user):''}</div>`).join('')}</details>
+      </div>
+      <div style="flex:1;min-width:280px;padding:18px 20px;border-right:1px solid var(--color-divider-soft)">
+        <div class="sub-h" style="margin-top:0">Included</div>${list(c.included)}
+        <div class="sub-h">Excluded</div>${list(c.excluded)}
+        <div class="sub-h">Unit price requests</div>${list(c.unit_price_requests,u=>`${esc(u.description)} <span class="tag tag-neutral">${esc(u.unit)}</span>`)}
+      </div>
+      <div style="flex:1;min-width:280px;padding:18px 20px">
+        <div class="sub-h" style="margin-top:0">Quantities in package</div>
+        ${list(c.quantities,q=>`${q.value.toLocaleString()} ${esc(q.unit)} — ${esc(q.description.slice(0,55))} <span class="conf">${q.confidence} · ${esc(q.source_sheet)}</span>`)}
+        <div class="sub-h">Requirements</div>
         <div class="muted">Insurance: ${esc(c.insurance_requirements)||'—'}</div>
         <div class="muted">Bond: ${esc(c.bond_requirements)||'—'}</div>
-        <div class="muted">Instructions: ${esc(c.bid_instructions)||'—'}</div></div>
-    </div>
-    <details><summary>Version history (${(pkg.versions||[]).length})</summary>
-      ${(pkg.versions||[]).map(v=>`<div class="muted">v${v.version} ${v.user?'by '+esc(v.user):''}</div>`).join('')}</details>
-  </div>`;
+        <div class="muted">Instructions: ${esc(c.bid_instructions)||'—'}</div>
+      </div>
+    </div>`);
 }
 async function savePkg(){
   await api(`/packages/${state.packageId}`,{method:'PATCH',body:JSON.stringify({
@@ -272,25 +302,26 @@ async function savePkg(){
   flash('Saved — previous content snapshotted to version history.'); render();
 }
 
-/* ---------------- Subs ---------------- */
+/* ---------------- 04 · Subs ---------------- */
 async function vSubs(){
   const rows = await api('/subs');
-  const compChip = c => c==='expired'?'<span class="chip bad">expired docs</span>':c==='expiring_soon'?'<span class="chip warn">expiring soon</span>':'<span class="chip ok">compliant</span>';
-  return `<div class="card"><h2>Subcontractor database (${rows.length})</h2>
-    <p><button class="btn ghost small" onclick="runSubReminders()">Run document-expiry reminders</button></p>
-    <div class="grid-wrap"><table>
-    <tr><th>Company</th><th>Trades</th><th>CSI</th><th>Bonding</th><th>EMR</th><th>Safety</th><th>Q/S/C</th><th>Award rate</th><th>Diversity</th><th>Compliance</th></tr>
-    ${rows.map(s=>`<tr><td><b>${esc(s.name)}</b>${s.preferred_vendor?' ⭐':''}<div class="muted">${esc(s.contact_email)}</div></td>
-      <td>${(s.trades||[]).map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</td>
+  const compTag = c => c==='expired'?'<span class="tag tag-bad">Expired docs</span>':c==='expiring_soon'?'<span class="tag tag-warn">Expiring soon</span>':'<span class="tag tag-ok">Compliant</span>';
+  return pagehead('Sub database', `<button class="btn btn-secondary btn-sm" onclick="runSubReminders()">Run expiry reminders</button>`) +
+  blueprint(['Subcontractors',`${rows.length}`],`<div class="grid-wrap">
+    <table class="table">
+    <tr><th>Company</th><th>Trades</th><th>CSI</th><th>Bonding</th><th>EMR</th><th>Safety</th><th>Q / S / C</th><th>Award rate</th><th>Diversity</th><th>Compliance</th></tr>
+    ${rows.map(s=>`<tr><td><b>${esc(s.name)}</b>${s.preferred_vendor?' <span class="tag tag-accent">Preferred</span>':''}<div class="evidence">${esc(s.contact_email)}</div></td>
+      <td>${(s.trades||[]).map(t=>`<span class="tag tag-neutral" style="margin:1px">${esc(t)}</span>`).join(' ')}</td>
       <td>${(s.csi_divisions||[]).join(', ')}</td>
       <td class="money">${money(s.bonding_capacity)}</td><td>${s.emr??'—'}</td><td>${s.safety_score??'—'}</td>
       <td>${[s.quality_rating,s.schedule_rating,s.communication_rating].map(v=>v??'—').join(' / ')}</td>
       <td>${pct(s.award_rate)}</td>
-      <td>${(s.diversity||[]).map(d=>`<span class="chip">${esc(d)}</span>`).join('')||'—'}</td>
-      <td>${compChip(s.compliance.overall)}
-        ${s.compliance.documents.map(d=>`<div class="muted">${esc(d.kind)} ${esc(d.expiration_date)||'no expiry'} (${esc(d.state)})</div>`).join('')}</td></tr>`).join('')}
-    </table></div></div>
-  <div class="card"><h2>Add subcontractor</h2>
+      <td>${(s.diversity||[]).map(d=>`<span class="tag tag-accent">${esc(d)}</span>`).join(' ')||'—'}</td>
+      <td>${compTag(s.compliance.overall)}
+        ${s.compliance.documents.map(d=>`<div class="evidence">${esc(d.kind)} ${esc(d.expiration_date)||'no expiry'} (${esc(d.state)})</div>`).join('')}</td></tr>`).join('')||'<tr><td colspan="10" class="muted">none</td></tr>'}
+    </table></div>`) + `
+  <div class="panel"><div class="pad">
+    <div class="sub-h" style="margin-top:0">Add subcontractor</div>
     <div class="form-grid">
       <div><label>Name*</label><input id="sub_name"></div>
       <div><label>Trades (comma-sep)</label><input id="sub_trades" placeholder="Electrical, Low Voltage"></div>
@@ -298,7 +329,7 @@ async function vSubs(){
       <div><label>Bonding capacity</label><input id="sub_bond" type="number"></div>
       <div><label>Email</label><input id="sub_email"></div>
     </div>
-    <p><button class="btn" onclick="addSub()">Add</button></p></div>`;
+    <p><button class="btn btn-primary" onclick="addSub()">Add</button></p></div></div>`;
 }
 async function addSub(){
   await api('/subs',{method:'POST',body:JSON.stringify({
@@ -315,77 +346,86 @@ async function runSubReminders(){
   render();
 }
 
-/* ---------------- Invitations ---------------- */
+/* ---------------- 05 · Invitations ---------------- */
 async function vInvitations(){
-  if(!state.projectId) return '<div class="card">Select a project first.</div>';
+  if(!state.projectId) return pagehead('Invitations') + empty('Select a project first.');
   const pkgs = await pickPackage();
-  if(!pkgs.length) return '<div class="card">No packages yet.</div>';
+  if(!pkgs.length) return pagehead('Invitations') + empty('No packages yet.');
   const [recs,invs] = await Promise.all([
     api(`/packages/${state.packageId}/recommendations`),
     api(`/packages/${state.packageId}/invitations`)]);
   const invited = new Set(invs.map(i=>i.sub_id));
-  return `<div class="card">${pkgSelector(pkgs)}</div>
+  const notInvited = recs.filter(r=>!invited.has(r.sub_id));
+  return pagehead('Invitations', pkgSelector(pkgs)) + `
   <div class="row">
-  <div class="card"><h2>AI-recommended bidders</h2>
-    ${recs.map(r=>`<div style="border-bottom:1px solid var(--line);padding:6px 0">
-      <b>${esc(r.name)}</b> <span class="chip">score ${r.score}</span> <span class="conf">confidence ${r.confidence}</span>
-      ${invited.has(r.sub_id)?'<span class="chip ok">invited</span>':`<button class="btn small" style="float:right" onclick="invite([${r.sub_id}])">Invite</button>`}
-      <div class="muted">${r.reasons.map(esc).join(' · ')}</div></div>`).join('')||'<span class="dim">no matching subs — add them in the Subs tab</span>'}
-    ${recs.filter(r=>!invited.has(r.sub_id)).length?`<p><button class="btn" onclick="invite([${recs.filter(r=>!invited.has(r.sub_id)).map(r=>r.sub_id)}])">Invite all recommended</button></p>`:''}
-  </div>
-  <div class="card"><h2>Invitations &amp; tracking</h2>
-    <p><button class="btn ghost small" onclick="runInvReminders()">Run deadline reminders (7d/3d/24h/2h)</button></p>
-    ${invs.map(i=>`<div style="border-bottom:1px solid var(--line);padding:6px 0">
-      <b>${esc(i.sub_name)}</b> <span class="chip">${esc(i.status)}</span>
-      ${Object.entries(i.flags).filter(([,v])=>v).map(([e])=>`<span class="chip ok">${e}</span>`).join('')}
-      <div class="muted">last activity ${esc(i.last_activity||'—')} · responded in ${i.hours_to_respond??'—'}h · reminders sent: ${i.reminders_sent.join(', ')||'none'}</div>
-      <div class="muted">portal token: <code>${esc(i.portal_token)}</code></div>
-      ${['opened','clicked','downloaded','declined','accepted'].map(e=>`<button class="btn ghost small" onclick="invEvent(${i.id},'${e}')">${e}</button>`).join(' ')}
-      <details><summary>invitation email</summary><pre class="muted">${esc(i.email_body)}</pre></details>
-    </div>`).join('')||'<span class="dim">none sent yet</span>'}
-  </div></div>`;
+    ${blueprint(['AI-recommended bidders','explainable scores'],`<div class="pad" style="padding-top:8px">
+      ${recs.map(r=>`<div class="listrow">
+        <b>${esc(r.name)}</b> <span class="tag tag-accent">score ${r.score}</span> <span class="conf">confidence ${r.confidence}</span>
+        ${invited.has(r.sub_id)?'<span class="tag tag-ok">Invited</span>':`<button class="btn btn-sm btn-secondary" style="float:right" onclick="invite([${r.sub_id}])">Invite</button>`}
+        <div class="evidence">${r.reasons.map(esc).join(' · ')}</div></div>`).join('')||'<div class="muted">no matching subs — add them in the Subs tab</div>'}
+      ${notInvited.length?`<p><button class="btn btn-primary" onclick="invite([${notInvited.map(r=>r.sub_id)}])">Invite all recommended</button></p>`:''}
+    </div>`)}
+    ${blueprint(['Invitations & tracking',`${invs.length}`],`<div class="pad" style="padding-top:8px">
+      <p style="margin-top:0"><button class="btn btn-secondary btn-sm" onclick="runInvReminders()">Run deadline reminders (7d / 3d / 24h / 2h)</button></p>
+      ${invs.map(i=>`<div class="listrow">
+        <b>${esc(i.sub_name)}</b> <span class="tag tag-accent">${esc(i.status)}</span>
+        ${Object.entries(i.flags).filter(([,v])=>v).map(([e])=>`<span class="tag tag-neutral">${e}</span>`).join(' ')}
+        <div class="evidence">last activity ${esc(i.last_activity||'—')} · responded in ${i.hours_to_respond??'—'}h · reminders: ${i.reminders_sent.join(', ')||'none'}</div>
+        <div class="evidence">portal token <code>${esc(i.portal_token)}</code></div>
+        <div style="margin-top:4px">${['opened','clicked','downloaded','declined','accepted'].map(e=>`<button class="btn btn-sm btn-secondary" onclick="invEvent(${i.id},'${e}')">${e}</button>`).join(' ')}</div>
+        <details><summary>invitation email</summary><pre class="muted">${esc(i.email_body)}</pre></details>
+      </div>`).join('')||'<div class="muted">none sent yet</div>'}
+    </div>`)}
+  </div>`;
 }
-async function invite(ids){await api(`/packages/${state.packageId}/invitations`,{method:'POST',body:JSON.stringify({sub_ids:ids})});flash('Invitations sent with generated emails + portal tokens.');render();}
+async function invite(ids){await api(`/packages/${state.packageId}/invitations`,{method:'POST',body:JSON.stringify({sub_ids:ids})});flash('Invitations sent — generated emails + portal tokens.');render();}
 async function invEvent(id,e){await api(`/invitations/${id}/events`,{method:'POST',body:JSON.stringify({event:e})});render();}
 async function runInvReminders(){const f=await api('/invitations/reminders/run',{method:'POST'});flash(f.length?`${f.length} reminder(s) fired.`:'No reminders due yet.');render();}
 
-/* ---------------- Leveling ---------------- */
+/* ---------------- 09 · Leveling ---------------- */
 async function vLeveling(){
-  if(!state.projectId) return '<div class="card">Select a project first.</div>';
+  if(!state.projectId) return pagehead('Leveling workspace') + empty('Select a project first — or click Seed demo.');
   const pkgs = await pickPackage();
-  if(!pkgs.length) return '<div class="card">No packages yet.</div>';
+  if(!pkgs.length) return pagehead('Leveling workspace') + empty('No packages yet.');
   const grid = await api(`/packages/${state.packageId}/leveling`);
   const B = grid.bidders;
-  if(!B.length) return `<div class="card">${pkgSelector(pkgs)}</div><div class="card">No proposals yet.
-    <h3>Submit a proposal (portal simulation)</h3>${proposalForm()}</div>`;
-  const cellCls = s => s==='included'?'cell-included':s==='excluded'?'cell-excluded':'cell-missing';
-  const sym = s => s==='included'?'✓ included':s==='excluded'?'✗ excluded':s==='missing'?'? missing':'~ unclear';
-  const listRow = (label,f) => `<tr><th>${label}</th>${B.map(b=>`<td>${(f(b)||[]).map(x=>`<div class="muted">${esc(x.description||x.text||'')} ${x.amount!=null?money(x.amount):''}${x.unit?'/'+esc(x.unit):''}</div>`).join('')||'—'}</td>`).join('')}</tr>`;
-  return `<div class="card">${pkgSelector(pkgs)}
-    <button class="btn ghost small" onclick="rebuild()">Rebuild scope matrix</button>
-    <span class="muted">low ${money(grid.stats.low)} · high ${money(grid.stats.high)} · avg ${money(grid.stats.avg)} · spread ${money(grid.stats.spread)}</span></div>
-  <div class="card"><h2>Leveling workspace — ${esc(grid.package.trade)}</h2>
-  <div class="grid-wrap"><table>
-    <tr><th style="min-width:180px">Bidder</th>${B.map(b=>`<th>${esc(b.sub_name)}<div class="muted">rev ${b.version}${b.needs_review.length?` · <span class="warn">review: ${b.needs_review.join(', ')}</span>`:''}</div></th>`).join('')}</tr>
-    <tr><th>Base bid <span class="muted">(click to edit — audited)</span></th>
-      ${B.map(b=>`<td class="money" style="cursor:pointer" onclick="editBase(${b.proposal_id},${b.base_bid??'null'})"><b>${money(b.base_bid)}</b></td>`).join('')}</tr>
-    ${grid.scope_rows.map(r=>`<tr><th>${esc(r.name)}</th>${B.map(b=>{const c=r.cells[b.proposal_id];
-      return `<td class="${cellCls(c.status)}" style="cursor:pointer" title="${esc(c.evidence)}\nconfidence ${c.confidence}${c.manual_override?' (manual)':''}"
-        onclick="overrideCell(${r.category_id},${b.proposal_id},'${c.status}')">${sym(c.status)}${c.manual_override?' ✎':''}${c.evidence?`<div class="muted" style="font-size:11px">${esc(c.evidence.slice(0,50))}</div>`:''}</td>`;}).join('')}</tr>`).join('')}
+  const statsBar = grid.stats.low!=null ?
+    `<span class="muted">low ${money(grid.stats.low)} · high ${money(grid.stats.high)} · avg ${money(grid.stats.avg)} · spread ${money(grid.stats.spread)}</span>` : '';
+  const head = pagehead('Leveling workspace',
+    pkgSelector(pkgs)+`<button class="btn btn-secondary btn-sm" onclick="rebuild()">Rebuild scope matrix</button>${statsBar}`);
+  if(!B.length) return head + empty('No proposals yet for this package.') + proposalPanel();
+  const sym = s => `<span class="tag ${tagFor(s)}">${s[0].toUpperCase()+s.slice(1)}</span>`;
+  const listRow = (label,f) => `<tr><td>${label}</td>${B.map(b=>`<td>${(f(b)||[]).map(x=>`<div class="evidence">${esc(x.description||x.text||'')} ${x.amount!=null?money(x.amount):''}${x.unit?'/'+esc(x.unit):''}</div>`).join('')||'<span class="muted">—</span>'}</td>`).join('')}</tr>`;
+  return head +
+  blueprint([`Master scope matrix — ${esc(grid.package.trade)}`, `${B.length} bidders`, esc(grid.package.status)], `
+  <div class="grid-wrap" style="max-height:72vh;overflow-y:auto">
+  <table class="table lvl-grid" style="min-width:760px">
+    <thead><tr><th>Scope line</th>${B.map(b=>`<th>${esc(b.sub_name)}<div class="evidence" style="text-transform:none;letter-spacing:0">rev ${b.version}${b.needs_review.length?` · <span style="color:var(--color-warn)">review: ${b.needs_review.join(', ')}</span>`:''}</div></th>`).join('')}</tr></thead>
+    <tbody>
+    ${grid.scope_rows.map(r=>`<tr><td>${esc(r.name)}</td>${B.map(b=>{const c=r.cells[b.proposal_id];
+      return `<td class="cell-click" title="${esc(c.evidence)}\nconfidence ${c.confidence}${c.manual_override?' (manual override)':''}"
+        onclick="overrideCell(${r.category_id},${b.proposal_id},'${c.status}')">${sym(c.status)}${c.manual_override?' ✎':''}${c.evidence?`<div class="evidence">${esc(c.evidence.slice(0,46))}</div>`:''}</td>`;}).join('')}</tr>`).join('')}
     ${listRow('Alternates',b=>b.alternates)}
     ${listRow('Allowances',b=>b.allowances)}
     ${listRow('Unit prices',b=>b.unit_prices)}
     ${listRow('Exclusions',b=>b.exclusions)}
     ${listRow('Line items',b=>b.line_items)}
+    <tr style="background:var(--color-accent-100)"><td style="background:var(--color-accent-100);font-family:var(--font-heading);text-transform:uppercase;font-weight:600;letter-spacing:.04em">Leveled base bid</td>
+      ${B.map(b=>`<td class="cell-click basebid" onclick="editBase(${b.proposal_id},${b.base_bid??'null'})">${money(b.base_bid)}</td>`).join('')}</tr>
+    </tbody>
   </table></div>
-  <p class="muted">Click a scope cell to cycle included → excluded → missing (recorded as a manual override, audited, and taught to the normalizer). Hover for source evidence.</p></div>
-  <div class="card"><h3>Submit / revise a proposal (portal simulation)</h3>${proposalForm()}</div>`;
+  <div class="legend" style="display:flex;gap:18px;flex-wrap:wrap;padding:10px 18px;border-top:1px solid var(--color-divider);font-size:13px">
+    <span class="tag tag-accent">Included</span><span class="tag tag-outline">Excluded</span><span class="tag tag-neutral">Missing</span>
+    <span class="muted" style="margin-left:auto">Click a scope cell to cycle included → excluded → missing (audited; optionally teaches the normalizer). Click a base bid to plug a value.</span>
+  </div>`) + proposalPanel();
 }
-function proposalForm(){
-  return `<div class="form-grid"><div><label>Sub ID</label><input id="prop_sub" type="number"></div>
+function proposalPanel(){
+  return `<div class="panel"><div class="pad">
+  <div class="sub-h" style="margin-top:0">Submit / revise a proposal — portal simulation, parsed automatically</div>
+  <div class="form-grid"><div><label>Sub ID</label><input id="prop_sub" type="number"></div>
   <div><label>Submitted by</label><input id="prop_by" placeholder="email"></div></div>
-  <label>Proposal text</label><textarea id="prop_text" placeholder="Base Bid: $1,000,000&#10;Alternate 1: ... - $50,000&#10;Exclusions:&#10;- Sales tax"></textarea>
-  <p><button class="btn" onclick="submitProp()">Submit — parsed automatically</button></p>`;
+  <label>Proposal text</label><textarea id="prop_text" placeholder="Base Bid: $1,000,000&#10;Alternate 1: standby generator - $50,000&#10;Exclusions:&#10;- Sales tax"></textarea>
+  <p><button class="btn btn-primary" onclick="submitProp()">Submit proposal</button></p></div></div>`;
 }
 async function submitProp(){
   const p = await api(`/packages/${state.packageId}/proposals`,{method:'POST',body:JSON.stringify({
@@ -393,10 +433,10 @@ async function submitProp(){
     text:document.getElementById('prop_text').value,
     submitted_by:document.getElementById('prop_by').value})});
   await api(`/packages/${state.packageId}/leveling/rebuild`,{method:'POST'});
-  flash(`Proposal v${p.version} parsed: base bid ${money(p.base_bid)}${p.needs_review.length?' — fields flagged for review: '+p.needs_review.join(', '):''}`);
+  flash(`Proposal v${p.version} parsed: base bid ${money(p.base_bid)}${p.needs_review.length?' — flagged for review: '+p.needs_review.join(', '):''}`);
   render();
 }
-async function rebuild(){await api(`/packages/${state.packageId}/leveling/rebuild`,{method:'POST'});flash('Scope matrix rebuilt (manual overrides preserved).');render();}
+async function rebuild(){await api(`/packages/${state.packageId}/leveling/rebuild`,{method:'POST'});flash('Scope matrix rebuilt — manual overrides preserved.');render();}
 async function overrideCell(cat,prop,cur){
   const next = cur==='included'?'excluded':cur==='excluded'?'missing':'included';
   const phrase = prompt(`Override to "${next}". Optionally teach the AI a phrase that means this scope (blank to skip):`,'');
@@ -412,59 +452,62 @@ async function editBase(pid,cur){
   render();
 }
 
-/* ---------------- Risk ---------------- */
+/* ---------------- 10 · Risk ---------------- */
 async function vRisk(){
-  if(!state.projectId) return '<div class="card">Select a project first.</div>';
+  if(!state.projectId) return pagehead('Risk analysis') + empty('Select a project first.');
   const pkgs = await pickPackage();
-  if(!pkgs.length) return '<div class="card">No packages yet.</div>';
+  if(!pkgs.length) return pagehead('Risk analysis') + empty('No packages yet.');
   const issues = await api(`/packages/${state.packageId}/risk`);
-  return `<div class="card">${pkgSelector(pkgs)}
-    <button class="btn small" onclick="analyzeRisk()">Re-run AI risk analysis</button></div>
-  <div class="card"><h2>Risk issues (${issues.length})</h2>
-    ${issues.map(i=>`<div style="border-bottom:1px solid var(--line);padding:8px 0">
-      <span class="sev-${i.severity}">■ ${i.severity.toUpperCase()}</span> <b>${esc(i.kind.replace(/_/g,' '))}</b>
-      <span class="chip">${esc(i.status)}</span>
-      ${i.cost_impact!=null?`<span class="chip">impact ${money(i.cost_impact)}</span>`:''}
+  return pagehead('Risk analysis', pkgSelector(pkgs)+`<button class="btn btn-primary btn-sm" onclick="analyzeRisk()">Re-run analysis</button>`) +
+  blueprint(['Risk issues',`${issues.length}`],`<div class="pad" style="padding-top:6px">
+    ${issues.map(i=>`<div class="listrow">
+      <span class="sev sev-${i.severity}">■ ${i.severity}</span> <b>${esc(i.kind.replace(/_/g,' '))}</b>
+      <span class="tag tag-neutral">${esc(i.status)}</span>
+      ${i.cost_impact!=null?`<span class="tag tag-warn">impact ${money(i.cost_impact)}</span>`:''}
       <span class="conf">confidence ${i.confidence}</span>
-      <div>${esc(i.explanation)}</div>
-      <div class="muted">→ ${esc(i.suggested_action)}</div>
-      ${i.evidence?`<div class="muted">evidence: ${esc(i.evidence)}</div>`:''}
-      ${i.status==='open'?`<button class="btn ghost small" onclick="issueStatus(${i.id},'acknowledged')">Acknowledge</button>
-      <button class="btn ghost small" onclick="issueStatus(${i.id},'dismissed')">Dismiss</button>
-      <button class="btn ghost small" onclick="assignIssue(${i.id})">Assign</button>`:''}
-    </div>`).join('')||'<span class="dim">no issues — run the analysis</span>'}</div>`;
+      <div class="soft">${esc(i.explanation)}</div>
+      <div class="evidence">→ ${esc(i.suggested_action)}</div>
+      ${i.evidence?`<div class="evidence">evidence: ${esc(i.evidence)}</div>`:''}
+      ${i.status==='open'?`<div style="margin-top:4px">
+        <button class="btn btn-sm btn-secondary" onclick="issueStatus(${i.id},'acknowledged')">Acknowledge</button>
+        <button class="btn btn-sm btn-secondary" onclick="issueStatus(${i.id},'dismissed')">Dismiss</button>
+        <button class="btn btn-sm btn-secondary" onclick="assignIssue(${i.id})">Assign</button></div>`:''}
+    </div>`).join('')||'<div class="muted">no issues — run the analysis</div>'}</div>`);
 }
 async function analyzeRisk(){const r=await api(`/packages/${state.packageId}/risk/analyze`,{method:'POST'});flash(`${r.length} issue(s) found.`);render();}
 async function issueStatus(id,s){await api(`/risk/${id}`,{method:'PATCH',body:JSON.stringify({status:s})});render();}
 async function assignIssue(id){const who=prompt('Assign to:');if(!who)return;await api(`/risk/${id}`,{method:'PATCH',body:JSON.stringify({status:'assigned',assigned_to:who})});render();}
 
-/* ---------------- Award ---------------- */
+/* ---------------- 11 · Award ---------------- */
 async function vAward(){
-  if(!state.projectId) return '<div class="card">Select a project first.</div>';
+  if(!state.projectId) return pagehead('Award') + empty('Select a project first.');
   const pkgs = await pickPackage();
-  if(!pkgs.length) return '<div class="card">No packages yet.</div>';
+  if(!pkgs.length) return pagehead('Award') + empty('No packages yet.');
   const [rec,awards] = await Promise.all([
     api(`/packages/${state.packageId}/award/recommendation`),
     api(`/packages/${state.packageId}/awards`)]);
   const fin = rec.finalists||[];
-  return `<div class="card">${pkgSelector(pkgs)}</div>
-  <div class="card"><h2>Best-value recommendation</h2>
-    ${rec.recommendation?`<p>🏆 <b>${esc(rec.recommendation.sub_name)}</b> — score ${rec.recommendation.score} at ${money(rec.recommendation.base_bid)}</p>`:'<p class="dim">No scorable proposals yet.</p>'}
-    <div class="grid-wrap"><table><tr><th>Finalist</th><th>Base bid</th><th>Score</th><th>Risk penalty</th>${fin.length?Object.keys(fin[0].breakdown).map(k=>`<th>${k}</th>`).join(''):''}<th></th></tr>
-      ${fin.map(f=>`<tr><td><b>${esc(f.sub_name)}</b></td><td class="money">${money(f.base_bid)}</td><td><b>${f.score}</b></td><td>${f.risk_penalty?'-'+f.risk_penalty:'0'}</td>
+  return pagehead('Award', pkgSelector(pkgs)) +
+  blueprint(['Best-value recommendation','weighted criteria minus open-risk penalties'],`<div class="pad" style="padding-top:8px">
+    ${rec.recommendation?`<p style="margin-top:0;font-family:var(--font-heading);font-size:20px;font-weight:600;text-transform:uppercase;letter-spacing:.02em">
+      Recommended: ${esc(rec.recommendation.sub_name)} <span class="tag tag-accent" style="vertical-align:middle">score ${rec.recommendation.score}</span>
+      <span class="tag tag-neutral" style="vertical-align:middle">${money(rec.recommendation.base_bid)}</span></p>`:'<p class="muted" style="margin-top:0">No scorable proposals yet.</p>'}
+    <div class="grid-wrap"><table class="table"><tr><th>Finalist</th><th>Base bid</th><th>Score</th><th>Risk penalty</th>${fin.length?Object.keys(fin[0].breakdown).map(k=>`<th>${k}</th>`).join(''):''}<th></th></tr>
+      ${fin.map(f=>`<tr><td><b>${esc(f.sub_name)}</b></td><td class="money">${money(f.base_bid)}</td><td><b>${f.score}</b></td><td>${f.risk_penalty?'−'+f.risk_penalty:'0'}</td>
         ${Object.values(f.breakdown).map(v=>`<td>${(v*100).toFixed(0)}</td>`).join('')}
-        <td><button class="btn small" onclick="doAward(${f.proposal_id})">Award</button></td></tr>`).join('')}
+        <td><button class="btn btn-sm btn-primary" onclick="doAward(${f.proposal_id})">Award</button></td></tr>`).join('')}
     </table></div>
-    <p class="muted">Weighted criteria: price 35%, completeness 20%, safety 10%, schedule 10%, quality 10%, history 5%, financial 5%, responsiveness 5% — minus open risk penalties.</p></div>
-  ${awards.map(a=>`<div class="card"><h2>Award — ${esc(a.sub_name)} <span class="chip">${esc(a.status)}</span></h2>
+    <p class="evidence">Weights: price 35 · completeness 20 · safety 10 · schedule 10 · quality 10 · history 5 · financial 5 · responsiveness 5 — minus open-risk penalties.</p></div>`)
+  + awards.map(a=>blueprint([`Award — ${esc(a.sub_name)}`, esc(a.status)],`<div class="pad" style="padding-top:8px">
     <details open><summary>Award letter</summary><pre class="muted">${esc(a.award_letter)}</pre></details>
-    <h3>Committee comments</h3>${a.comments.map(c=>`<div class="muted"><b>${esc(c.user)}:</b> ${esc(c.text)}</div>`).join('')||'<span class="dim">none</span>'}
-    <p><input id="cm_${a.id}" placeholder="add comment" style="max-width:320px">
-      <button class="btn ghost small" onclick="awardComment(${a.id})">Comment</button></p>
-    <h3>Approvals</h3>${a.approvals.map(x=>`<div class="muted">${esc(x.approver)} — <b class="${x.decision==='approved'?'ok':'bad'}">${esc(x.decision)}</b> ${esc(x.note)} <span class="dim">${esc(x.at)}</span></div>`).join('')||'<span class="dim">pending</span>'}
-    ${a.status!=='approved'?`<p><button class="btn" onclick="approve(${a.id},'approved')">Approve</button>
-      <button class="btn ghost" onclick="approve(${a.id},'rejected')">Reject</button></p>`:''}
-  </div>`).join('')}`;
+    <div class="sub-h">Committee comments</div>${a.comments.map(c=>`<div class="evidence"><b>${esc(c.user)}:</b> ${esc(c.text)}</div>`).join('')||'<span class="muted">none</span>'}
+    <p><input id="cm_${a.id}" placeholder="add comment" style="max-width:320px;display:inline-block">
+      <button class="btn btn-sm btn-secondary" onclick="awardComment(${a.id})">Comment</button></p>
+    <div class="sub-h">Approvals — permanently recorded</div>
+    ${a.approvals.map(x=>`<div class="evidence">${esc(x.approver)} — <b>${esc(x.decision)}</b> ${esc(x.note)} · ${esc(x.at)}</div>`).join('')||'<span class="muted">pending</span>'}
+    ${a.status!=='approved'?`<p><button class="btn btn-primary" onclick="approve(${a.id},'approved')">Approve</button>
+      <button class="btn btn-secondary" onclick="approve(${a.id},'rejected')">Reject</button></p>`:''}
+  </div>`)).join('');
 }
 async function doAward(pid){await api(`/packages/${state.packageId}/award`,{method:'POST',body:JSON.stringify({proposal_id:pid,user:'estimator'})});flash('Award created with generated letter — route for approval.');render();}
 async function awardComment(id){const t=document.getElementById('cm_'+id).value;if(!t)return;await api(`/awards/${id}/comments`,{method:'POST',body:JSON.stringify({user:'committee',text:t})});render();}
@@ -473,12 +516,13 @@ async function approve(id,d){await api(`/awards/${id}/approvals`,{method:'POST',
 /* ---------------- Audit ---------------- */
 async function vAudit(){
   const rows = await api('/audit');
-  return `<div class="card"><h2>Audit history (${rows.length})</h2><div class="grid-wrap">
-    <table><tr><th>When</th><th>Entity</th><th>Field</th><th>Old</th><th>New</th><th>User</th><th>Reason</th></tr>
-    ${rows.map(a=>`<tr><td class="muted">${esc(a.at)}</td><td>${esc(a.entity)} #${a.entity_id}</td><td>${esc(a.field)}</td>
-      <td class="muted">${esc(String(a.old_value).slice(0,60))}</td><td>${esc(String(a.new_value).slice(0,60))}</td>
-      <td>${esc(a.user)}</td><td class="muted">${esc(a.reason)}</td></tr>`).join('')}
-    </table></div></div>`;
+  return pagehead('Audit history') +
+  blueprint(['Every edit, override and approval',`${rows.length} entries`],`<div class="grid-wrap">
+    <table class="table"><tr><th>When</th><th>Entity</th><th>Field</th><th>Old</th><th>New</th><th>User</th><th>Reason</th></tr>
+    ${rows.map(a=>`<tr><td class="evidence">${esc(a.at)}</td><td>${esc(a.entity)} #${a.entity_id}</td><td>${esc(a.field)}</td>
+      <td class="evidence">${esc(String(a.old_value).slice(0,60))}</td><td class="evidence">${esc(String(a.new_value).slice(0,60))}</td>
+      <td>${esc(a.user)}</td><td class="evidence">${esc(a.reason)}</td></tr>`).join('')||'<tr><td colspan="7" class="muted">no entries yet</td></tr>'}
+    </table></div>`);
 }
 
 const VIEWS = {Dashboard:vDashboard,Project:vProject,Documents:vDocuments,Packages:vPackages,
@@ -487,7 +531,7 @@ const VIEWS = {Dashboard:vDashboard,Project:vProject,Documents:vDocuments,Packag
 async function render(){
   const main = document.getElementById('main');
   try{ main.innerHTML = await VIEWS[state.tab](); }
-  catch(e){ main.innerHTML = `<div class="card bad">Failed to load: ${esc(e.message)}</div>`; }
+  catch(e){ main.innerHTML = `<div class="panel"><div class="pad" style="color:var(--color-bad)">Failed to load: ${esc(e.message)}</div></div>`; }
 }
 (async function(){ renderNav(); await loadProjects(); render(); })();
 </script>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BidLevel — Level every bid on the same scope</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%235980a6'/%3E%3Ctext x='50' y='68' font-family='sans-serif' font-size='46' font-weight='700' fill='%23f2f2f3' text-anchor='middle'%3EBL%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/assets/theme.css">
+<style>
+  .wrap { max-width: 1220px; margin: 0 auto; padding: 0 clamp(20px, 5vw, 72px); }
+  .hero { padding: clamp(56px, 8vw, 104px) 0 clamp(40px, 5vw, 64px); }
+  .hero h1 { font-size: clamp(44px, 6.6vw, 88px); max-width: 18ch; }
+  .hero h1 span { display: block; }
+  .hero p { font-size: 18px; line-height: 1.5; max-width: 64ch; margin: 28px 0 0; color: color-mix(in srgb, var(--color-text) 82%, transparent); }
+  .hero p strong { color: var(--color-text); }
+  .hero .cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
+  section { padding: clamp(40px, 5vw, 64px) 0; }
+  h2.display { font-size: clamp(30px, 3.6vw, 44px); max-width: 24ch; margin: 14px 0 0; }
+  .lede { max-width: 60ch; color: color-mix(in srgb, var(--color-text) 75%, transparent); margin: 14px 0 0; }
+
+  /* master scope matrix */
+  .matrix td, .matrix th { padding: 12px 24px; }
+  .matrix td + td, .matrix th + th { border-left: 1px solid var(--color-divider); }
+  .matrix tbody tr { border-top: 1px solid var(--color-divider); }
+  .matrix .lvl td { background: var(--color-accent-100); font-family: var(--font-heading); font-weight: 600; }
+  .matrix .lvl td:first-child { text-transform: uppercase; font-size: 15px; letter-spacing: 0.04em; }
+  .matrix .lvl td + td { font-size: 20px; white-space: nowrap; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; padding: 12px 24px; border-top: 1px solid var(--color-divider); font-size: 13px; color: color-mix(in srgb, var(--color-text) 70%, transparent); }
+
+  /* modules grid */
+  .modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); border: 1px solid var(--color-divider); border-width: 1px 0 0 1px; margin-top: 36px; }
+  .module { border: 1px solid var(--color-divider); border-width: 0 1px 1px 0; padding: 22px 24px; text-decoration: none; display: block; }
+  .module:hover { background: color-mix(in srgb, var(--color-text) 4%, transparent); }
+  .module .num { font-size: 12px; letter-spacing: 0.14em; color: var(--color-accent-700); font-weight: 600; }
+  .module h3 { font-family: var(--font-heading); text-transform: uppercase; font-weight: 600; font-size: 19px; letter-spacing: 0.03em; margin: 8px 0 8px; }
+  .module p { margin: 0; font-size: 13.5px; line-height: 1.5; color: color-mix(in srgb, var(--color-text) 70%, transparent); }
+
+  /* explainable section */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 5vw, 64px); align-items: start; }
+  @media (max-width: 880px) { .split { grid-template-columns: 1fr; } }
+  .xtract { border-bottom: 1px solid var(--color-divider); padding: 14px 18px; }
+  .xtract:last-child { border-bottom: none; }
+  .xtract .fld { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 55%, transparent); font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .xtract .val { font-family: var(--font-heading); font-weight: 600; font-size: 24px; margin: 4px 0 2px; }
+  .xtract .src { font-size: 12.5px; color: color-mix(in srgb, var(--color-text) 60%, transparent); }
+
+  /* dark band */
+  .band-dark section { padding: clamp(48px, 6vw, 80px) 0; }
+  .band-dark h2 { color: #eef2f6; }
+  .band-dark .lede { color: color-mix(in srgb, #eef2f6 75%, transparent); }
+  .stat-grid { margin-top: 36px; }
+
+  /* honesty rows */
+  .honesty { border-top: 1px solid var(--color-divider); margin-top: 30px; }
+  .hrow { display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 18px 0; border-bottom: 1px solid var(--color-divider); }
+  @media (max-width: 720px) { .hrow { grid-template-columns: 1fr; gap: 6px; } }
+  .hrow .k { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; color: var(--color-accent-700); }
+  .hrow .v { font-size: 14.5px; line-height: 1.55; color: color-mix(in srgb, var(--color-text) 78%, transparent); }
+
+  /* CTA */
+  .cta-final { text-align: center; padding: clamp(48px, 7vw, 88px) clamp(20px, 5vw, 72px); }
+  .cta-final h2 { margin: 0 auto; max-width: 22ch; }
+  .cta-final p { max-width: 56ch; margin: 18px auto 26px; color: color-mix(in srgb, var(--color-text) 75%, transparent); }
+  footer { border-top: 1px solid var(--color-divider); padding: 18px clamp(20px, 5vw, 72px); display: flex; flex-wrap: wrap; gap: 12px; align-items: center; font-size: 13px; color: color-mix(in srgb, var(--color-text) 60%, transparent); }
+  footer .brand { font-family: var(--font-heading); text-transform: uppercase; font-weight: 600; font-size: 15px; letter-spacing: 0.06em; color: var(--color-text); }
+  footer .right { margin-left: auto; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-brand" href="/">BidLevel</a>
+  <span class="nav-chip">Bid leveling &amp; procurement</span>
+  <span style="flex:1"></span>
+  <a href="#workflow">Workflow</a>
+  <a href="#leveling">Leveling</a>
+  <a href="#risk">Risk &amp; award</a>
+  <button type="button" class="btn btn-primary" onclick="bookDemo()">Book a demo</button>
+</nav>
+
+<div class="wrap">
+  <section class="hero">
+    <span class="kicker">For GCs, estimators &amp; procurement teams</span>
+    <h1 class="h-display"><span>Level every bid</span><span>on the same scope.</span></h1>
+    <p>BidLevel runs the whole procurement line — drawings in, packages out, invitations,
+      submissions, proposal parsing, a normalized scope matrix, risk analysis and best-value award.
+      <strong>Every AI extraction carries its source text, page and a confidence score;</strong>
+      anything below threshold is flagged for a human, never silently accepted.</p>
+    <div class="cta">
+      <button type="button" class="btn btn-primary" onclick="bookDemo()">Book a demo</button>
+      <a class="btn btn-ghost" href="/app#Leveling">See the leveling grid</a>
+    </div>
+  </section>
+
+  <section id="leveling" style="padding-top: clamp(16px,3vw,32px)">
+    <div class="blueprint">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <header class="bp-head">
+        <span id="mx-title">Master scope matrix — Electrical, Div 26</span>
+        <span id="mx-bidders">3 bidders</span>
+        <span id="mx-project">Medical Office Bldg</span>
+      </header>
+      <div class="grid-wrap">
+        <table class="table matrix" style="min-width:720px" id="mx-table">
+          <thead><tr>
+            <th style="border-bottom:none">Scope line</th>
+            <th style="border-bottom:none">Summit Electric</th>
+            <th style="border-bottom:none">Ironclad Elec.</th>
+            <th style="border-bottom:none">Bay Power Co.</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>Branch wiring &amp; devices</td><td><span class="tag tag-accent">Included</span></td><td><span class="tag tag-accent">Included</span></td><td><span class="tag tag-accent">Included</span></td></tr>
+            <tr><td>Fire alarm system</td><td><span class="tag tag-accent">Included</span></td><td><span class="tag tag-outline">Excluded</span></td><td><span class="tag tag-accent">Included</span></td></tr>
+            <tr><td>Temporary power</td><td><span class="tag tag-accent">Included</span></td><td><span class="tag tag-accent">Included</span></td><td><span class="tag tag-neutral">Missing</span></td></tr>
+            <tr><td>Owner-supplied fixtures (install)</td><td><span class="tag tag-accent">Included</span></td><td><span class="tag tag-neutral">Missing</span></td><td><span class="tag tag-accent">Included</span></td></tr>
+            <tr><td>Generator &amp; transfer switch</td><td><span class="tag tag-outline">Excluded</span></td><td><span class="tag tag-accent">Included</span></td><td><span class="tag tag-accent">Included</span></td></tr>
+            <tr class="lvl"><td>Leveled base bid</td><td>$1.84M</td><td>$1.71M</td><td>$1.96M</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="legend">
+        <span><span class="tag tag-accent">Included</span></span>
+        <span><span class="tag tag-outline">Excluded</span></span>
+        <span><span class="tag tag-neutral">Missing</span></span>
+        <span style="margin-left:auto" id="mx-note">Hover any cell for source evidence · every edit is audited</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="workflow">
+    <span class="sec-label">02 · The workflow</span>
+    <h2 class="h-display display">Twelve modules, one auditable line</h2>
+    <p class="lede">Intake to award, each step handing structured, sourced data to the next.
+      Nothing downstream trusts a number it can't trace back to a page.</p>
+    <div class="modules" id="modules"></div>
+  </section>
+
+  <section id="explainable">
+    <div class="split">
+      <div>
+        <span class="sec-label">03 · Explainable by design</span>
+        <h2 class="h-display display">Every field shows the page it came from</h2>
+        <p class="lede">Proposal parsing pulls base bid, alternates, allowances, unit prices,
+          exclusions and lead times — each with its original text, source page and confidence.
+          Fields below the threshold are flagged <strong>needs review</strong> instead of quietly
+          entering the leveling grid.</p>
+        <p class="lede">Override a classification and BidLevel learns the phrase — the correction
+          persists across rebuilds and teaches the normalizer.</p>
+      </div>
+      <div class="blueprint">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <header class="bp-head"><span>■&nbsp; Summit Electric — proposal.pdf</span></header>
+        <div class="xtract">
+          <div class="fld"><span>Base bid</span><span class="conf">0.98</span></div>
+          <div class="val">$1,842,000</div>
+          <div class="src">“Base Bid: One Million Eight Hundred…” · p.2</div>
+        </div>
+        <div class="xtract">
+          <div class="fld"><span>Alternate 1 — generator</span><span class="conf">0.94</span></div>
+          <div class="val">$126,500</div>
+          <div class="src">“Add Alt #1: standby generator…” · p.3</div>
+        </div>
+        <div class="xtract">
+          <div class="fld"><span>Fire alarm scope</span><span class="conf">0.91</span></div>
+          <div class="val">Excluded</div>
+          <div class="src">“no fire alarm devices provided” · p.5</div>
+        </div>
+        <div class="xtract">
+          <div class="fld"><span>Base bid (inferred)</span><span class="tag tag-warn">Needs review</span></div>
+          <div class="val">$88,000</div>
+          <div class="src">“sum of line items, no lump sum stated” · p.4</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="band-dark" id="risk">
+  <div class="wrap">
+    <section>
+      <span class="sec-label">04 · Risk &amp; award</span>
+      <h2 class="h-display display">The cheapest bid should not automatically win</h2>
+      <p class="lede">Risk analysis flags outlier pricing, math errors, missing scope, unbalanced
+        unit prices, long lead times, expired insurance and low-confidence extractions — each with
+        severity, cost impact and evidence. Best-value scoring then subtracts open-risk penalties,
+        so a low number with real exposure loses on the merits.</p>
+      <div class="stat-grid">
+        <div class="stat"><b>20+</b><span>Risk issues detected in the seeded scenario</span></div>
+        <div class="stat"><b>8</b><span>Risk kinds — pricing, math, scope, schedule, compliance</span></div>
+        <div class="stat"><b>±25%</b><span>Median band that flags outlier line pricing</span></div>
+        <div class="stat"><b>#3</b><span>Cheapest bidder correctly loses on best value</span></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="honesty">
+    <div class="split">
+      <div>
+        <span class="sec-label">05 · Scope &amp; honesty</span>
+        <h2 class="h-display display">What is deliberately not here yet</h2>
+      </div>
+      <div class="honesty">
+        <div class="hrow"><div class="k">OCR / CAD / BIM</div>
+          <div class="v">The pipeline runs on extractable text; a real OCR or vision service plugs
+            in behind one seam and everything downstream works unchanged. Binary uploads are
+            recorded honestly as “no extractable text,” never fake-processed.</div></div>
+        <div class="hrow"><div class="k">Deterministic AI</div>
+          <div class="v">Extraction is pattern rules with real confidence scores and full
+            provenance — the auditable first version. An LLM layer can replace each function
+            behind the same contracts.</div></div>
+        <div class="hrow"><div class="k">Email delivery</div>
+          <div class="v">Invitation emails and reminders are generated and recorded, not
+            SMTP-delivered — the dispatcher pattern is the seam for wiring real delivery.</div></div>
+        <div class="hrow"><div class="k">Auth &amp; storage</div>
+          <div class="v">Single-tenant demo today; document text lives in the database. Production
+            wants token auth, object storage and background workers.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="blueprint cta-final">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <h2 class="h-display display">Seed the demo,<br>level a real trade</h2>
+      <p>Load a full medical-office scenario — drawings, 15 packages, competing electrical
+        proposals, a populated scope matrix and 20+ risk issues — and walk it end to end in
+        thirty minutes.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button type="button" class="btn btn-primary" onclick="bookDemo()">Book a demo</button>
+        <a class="btn btn-secondary" href="/docs">Read the module spec</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <span class="brand">BidLevel</span>
+  <span>AI bid leveling &amp; procurement</span>
+  <span class="right">Explainable extractions · full audit log</span>
+</footer>
+
+<script>
+const API = location.origin + '/api/v1';
+const MODULES = [
+  ['Project wizard','Validated multi-field intake — team, dates, value, delivery method, insurance and bonding requirements.','Project'],
+  ['Drawing intelligence','Sheet recognition, note & schedule capture, 25+ trades mapped to CSI, and quantity extraction with source sheet and confidence.','Documents'],
+  ['Package builder','One suggested package per trade, pre-loaded with sheets, quantities and scope. Every edit snapshots a version and writes the audit log.','Packages'],
+  ['Sub database','Full profiles — bonding, EMR, safety, diversity — plus compliance docs with expiry states and idempotent reminder windows.','Subs'],
+  ['Invitations','Explainable AI ranking on trade match, capacity, performance and compliance, with per-invite portal tokens and status tracking.','Invitations'],
+  ['Portal','Token-scoped submission with drafts and unlimited revisions — each version preserves the prior one with timestamp and submitter.','Leveling'],
+  ['Proposal parsing','Base bid, alternates, allowances, unit prices, exclusions and lead times — every field with source page, original text and confidence.','Leveling'],
+  ['Normalization','A master scope matrix with synonym groups and negation detection. Manual overrides persist and teach the classifier new phrases.','Leveling'],
+  ['Leveling workspace','A spreadsheet grid of bidders × scope × money, color-coded included / excluded / missing, with hoverable evidence and audited edits.','Leveling'],
+  ['Risk analysis','Outlier pricing, math errors, missing scope, long leads, expired insurance and low-confidence fields — each with severity and evidence.','Risk'],
+  ['Award','Weighted best-value scoring minus open-risk penalties, committee comments, recorded digital approvals and generated award letters.','Award'],
+  ['Analytics','Participation, leveling savings by trade, response and award distribution, diversity and risk exposure — per project or portfolio-wide.','Dashboard'],
+];
+document.getElementById('modules').innerHTML = MODULES.map(([t,d,tab],i)=>
+  `<a class="module" href="/app#${tab}">
+     <span class="num">${String(i+1).padStart(2,'0')}</span>
+     <h3>${t}</h3><p>${d}</p></a>`).join('');
+
+async function bookDemo(){
+  const btns = document.querySelectorAll('.btn-primary');
+  btns.forEach(b=>{b.disabled=true;b.textContent='Seeding demo…';});
+  try{
+    const projects = await (await fetch(API+'/projects')).json();
+    if(!projects.length) await fetch(API+'/demo/seed',{method:'POST'});
+    location.href = '/app#Leveling';
+  }catch(e){
+    btns.forEach(b=>{b.disabled=false;b.textContent='Book a demo';});
+    alert('Could not reach the BidLevel API: '+e.message);
+  }
+}
+
+// If the demo is already seeded, replace the sample matrix with live data.
+(async function liveMatrix(){
+  try{
+    const projects = await (await fetch(API+'/projects')).json();
+    if(!projects.length) return;
+    const project = projects[0];
+    const pkgs = await (await fetch(`${API}/projects/${project.id}/packages`)).json();
+    const pkg = pkgs.find(p=>p.proposal_count>0);
+    if(!pkg) return;
+    const grid = await (await fetch(`${API}/packages/${pkg.id}/leveling`)).json();
+    if(!grid.bidders.length || !grid.scope_rows.length) return;
+    const esc = s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const B = grid.bidders.slice(0,4);
+    document.getElementById('mx-title').textContent =
+      `Master scope matrix — ${grid.package.trade}, Div ${pkg.csi_division||''} · live`;
+    document.getElementById('mx-bidders').textContent = `${grid.bidders.length} bidders`;
+    document.getElementById('mx-project').textContent = project.name.length>24?project.name.slice(0,22)+'…':project.name;
+    const tag = s => s==='included' ? '<span class="tag tag-accent">Included</span>'
+      : s==='excluded' ? '<span class="tag tag-outline">Excluded</span>'
+      : '<span class="tag tag-neutral">Missing</span>';
+    const compact = v => v==null?'—':'$'+(v>=1e6?(v/1e6).toFixed(2)+'M':Math.round(v/1e3)+'k');
+    document.getElementById('mx-table').innerHTML =
+      `<thead><tr><th style="border-bottom:none">Scope line</th>${B.map(b=>`<th style="border-bottom:none">${esc(b.sub_name)}</th>`).join('')}</tr></thead>
+       <tbody>${grid.scope_rows.slice(0,5).map(r=>
+         `<tr><td>${esc(r.name)}</td>${B.map(b=>{const c=r.cells[b.proposal_id];
+            return `<td title="${esc(c.evidence)}">${tag(c.status)}</td>`;}).join('')}</tr>`).join('')}
+       <tr class="lvl"><td>Leveled base bid</td>${B.map(b=>`<td>${compact(b.base_bid)}</td>`).join('')}</tr></tbody>`;
+    document.getElementById('mx-note').textContent = 'Live from your seeded demo · open the app to edit';
+  }catch(e){ /* keep the static sample */ }
+})();
+</script>
+</body>
+</html>

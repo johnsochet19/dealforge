@@ -11,6 +11,7 @@ from pathlib import Path
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -34,7 +35,8 @@ app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
 )
 
-FRONTEND = Path(__file__).parent / "frontend" / "index.html"
+FRONTEND_DIR = Path(__file__).parent / "frontend"
+app.mount("/assets", StaticFiles(directory=FRONTEND_DIR / "assets"), name="assets")
 
 
 @app.on_event("startup")
@@ -49,8 +51,13 @@ def health():
 
 
 @app.get("/")
-def frontend():
-    return FileResponse(FRONTEND)
+def landing():
+    return FileResponse(FRONTEND_DIR / "landing.html")
+
+
+@app.get("/app")
+def workspace():
+    return FileResponse(FRONTEND_DIR / "index.html")
 
 
 # ------------------------------------------------------------------ projects

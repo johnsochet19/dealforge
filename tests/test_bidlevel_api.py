@@ -35,8 +35,14 @@ def client():
 
 def test_health_and_frontend(client):
     assert client.get("/health").json()["app"] == "bidlevel"
-    r = client.get("/")
-    assert r.status_code == 200 and "BidLevel" in r.text
+    landing = client.get("/")
+    assert landing.status_code == 200 and "Level every bid" in landing.text
+    workspace = client.get("/app")
+    assert workspace.status_code == 200 and "Leveling workspace" in workspace.text
+    css = client.get("/assets/theme.css")
+    assert css.status_code == 200 and "--color-accent" in css.text
+    font = client.get("/assets/fonts/BarlowCondensed-600.woff2")
+    assert font.status_code == 200 and len(font.content) > 10000
 
 
 def test_project_validation_errors(client):
